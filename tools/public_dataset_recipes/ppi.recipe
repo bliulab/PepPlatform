@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "task": "pep_protein_interaction",
+  "source": "intact",
+  "query": {"query": "EBI-4392836"},
+  "page_size": 20,
+  "max_records": 10000,
+  "peptide_length": [5, 50],
+  "split": {"seed": 42, "ratios": [80, 10, 10]}
+}

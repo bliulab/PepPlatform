@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "task": "pep_mhci",
+  "source": "iedb",
+  "query": {"elution_id": "eq.4829986"},
+  "page_size": 20,
+  "max_records": 10000,
+  "peptide_length": [8, 15],
+  "binding_methods": ["cellular MHC/T cell inhibition"],
+  "resources": {"pseudosequences": "/path/to/pseudoseqs_decoded.csv"},
+  "split": {"seed": 42, "ratios": [80, 10, 10]}
+}

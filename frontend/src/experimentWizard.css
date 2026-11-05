@@ -1,0 +1,138 @@
+.experiment-wizard .wizard-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+.wizard-main {
+  min-width: 0;
+  container-type: inline-size;
+}
+.experiment-wizard .wizard-field-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+  gap: 1.25rem;
+}
+.experiment-wizard .wizard-field-grid > label:has(> .field-control),
+.experiment-wizard .wizard-field-grid > .select-control {
+  display: grid;
+  min-width: 0;
+  align-self: start;
+  align-content: start;
+  grid-template-rows: minmax(2.8em, auto) auto;
+  gap: 0.5rem;
+}
+.experiment-wizard .wizard-field-label,
+.experiment-wizard .wizard-field-grid > .select-control > .select-control-label {
+  display: flex;
+  min-width: 0;
+  align-items: flex-end;
+  color: var(--color-ink);
+  font-size: 0.8125rem;
+  font-weight: 550;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+.experiment-wizard .wizard-field-grid > label:has(> .field-control) > .field-control,
+.experiment-wizard .wizard-field-grid > .select-control > .select-control-trigger {
+  height: 2.75rem;
+  min-height: 2.75rem;
+  align-self: start;
+}
+.experiment-wizard .wizard-field-grid > .select-control-multiline > .select-control-trigger {
+  height: auto;
+}
+.experiment-wizard .wizard-field-grid > label:has(> .field-control) > :is(small, .text-xs) {
+  color: var(--color-muted);
+  font-size: 0.75rem;
+  line-height: 1.65;
+}
+.experiment-wizard .advanced-panel {
+  padding: 1.35rem;
+  background: var(--surface-strong);
+  border-color: var(--color-line);
+}
+.experiment-wizard .advanced-section {
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+}
+.experiment-wizard .advanced-section h3 {
+  text-transform: none;
+  letter-spacing: -0.015em;
+  font-size: 0.95rem;
+  font-weight: 650;
+}
+.experiment-wizard .advanced-section > div:first-child > p {
+  max-width: 74ch;
+  margin-top: 0.4rem;
+  font-size: 0.8rem;
+  line-height: 1.7;
+}
+.experiment-wizard .advanced-toggle {
+  min-height: 2.75rem;
+  padding: 0.6rem 0.8rem;
+  border-color: var(--color-line);
+  background: var(--surface-bg);
+  font-weight: 550;
+  line-height: 1.5;
+}
+.experiment-wizard .advanced-toggle:has(input:checked) {
+  border-color: var(--marker-border);
+  background: var(--marker-bg);
+  color: var(--color-accent-dark);
+}
+.experiment-wizard .advanced-toggle:focus-within {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 3px;
+}
+@container (min-width: 30rem) {
+  .experiment-wizard .wizard-field-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@container (min-width: 54rem) {
+  .experiment-wizard .advanced-grid.wizard-field-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (min-width: 1024px) {
+  .experiment-wizard .wizard-layout {
+    grid-template-columns: 14rem minmax(0, 1fr);
+  }
+  .wizard-progress {
+    position: sticky;
+    top: 5.5rem;
+  }
+}
+@media (max-width: 1023px) {
+  .wizard-steps {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.5rem;
+  }
+  .wizard-steps > :is(button, .step-card) {
+    margin-top: 0;
+    padding: 0.75rem 0.6rem;
+  }
+  .wizard-steps .step-card-description {
+    display: none;
+  }
+  .wizard-steps .text-sm {
+    font-size: 0.75rem;
+    overflow-wrap: anywhere;
+  }
+}
+@media (max-width: 640px) {
+  .experiment-wizard .advanced-panel {
+    padding: 1rem;
+  }
+  .experiment-wizard .wizard-field-grid > label:has(> .field-control),
+  .experiment-wizard .wizard-field-grid > .select-control {
+    grid-template-rows: auto auto;
+  }
+  .wizard-steps {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

@@ -1,0 +1,14 @@
+/*
+!/frontend/
+
+/frontend/*
+!/frontend/src/
+!/frontend/*.ts
+!/frontend/*.js
+
+**/node_modules/
+**/dist/
+**/cache/
+**/.cli-ref/
+**/.playwright-auth/
+**/*.tsbuildinfo

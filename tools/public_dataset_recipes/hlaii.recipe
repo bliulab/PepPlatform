@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "task": "pep_hlaii",
+  "source": "iedb",
+  "query": {"elution_id": "eq.12481899"},
+  "page_size": 20,
+  "max_records": 10000,
+  "peptide_length": [9, 30],
+  "binding_methods": ["purified MHC/direct/fluorescence"],
+  "resources": {"pseudosequences": "/path/to/hlaII_pair_pseudoseq.csv"},
+  "split": {"seed": 42, "ratios": [80, 10, 10]}
+}

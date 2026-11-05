@@ -1,0 +1,84 @@
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-pepplatform}
+      POSTGRES_USER: ${POSTGRES_USER:-pepplatform}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD before starting the database}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-pepplatform} -d ${POSTGRES_DB:-pepplatform}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: .
+      dockerfile: docker/backend.Dockerfile
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PEP_AUTH_ENABLED: ${PEP_AUTH_ENABLED:-1}
+      PEP_ENV: ${PEP_ENV:-production}
+      PEP_AUTH_DEBUG_CODES: ${PEP_AUTH_DEBUG_CODES:-0}
+      PEP_WEB_ENSEMBLES_ENABLED: ${PEP_WEB_ENSEMBLES_ENABLED:-1}
+      PEP_DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-pepplatform}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD before starting the backend}@db:5432/${POSTGRES_DB:-pepplatform}
+      PEP_RUNTIME_ROOT: /var/lib/pepplatform
+      PEP_SESSION_SECRET: ${PEP_SESSION_SECRET:?Set PEP_SESSION_SECRET to a stable random secret before starting the backend}
+      PEP_LLM_KEY_ENCRYPTION_SECRET: ${PEP_LLM_KEY_ENCRYPTION_SECRET:?Set PEP_LLM_KEY_ENCRYPTION_SECRET to a stable secret before starting the backend}
+      PEP_TAVILY_API_KEY: ${PEP_TAVILY_API_KEY:-}
+      PEP_WEB_SEARCH_ENABLED: ${PEP_WEB_SEARCH_ENABLED:-true}
+      PEP_WEB_SEARCH_TIMEOUT_SECONDS: ${PEP_WEB_SEARCH_TIMEOUT_SECONDS:-12}
+      PEP_WEB_SEARCH_USAGE_CACHE_SECONDS: ${PEP_WEB_SEARCH_USAGE_CACHE_SECONDS:-300}
+      PEP_TOP_NGRAM_MAX_RESIDUES: ${PEP_TOP_NGRAM_MAX_RESIDUES:-10000}
+      PEP_DATASET_UPLOAD_MAX_ARCHIVE_MIB: ${PEP_DATASET_UPLOAD_MAX_ARCHIVE_MIB:-64}
+      PEP_DATASET_UPLOAD_MAX_EXTRACTED_MIB: ${PEP_DATASET_UPLOAD_MAX_EXTRACTED_MIB:-512}
+      PEP_DATASET_UPLOAD_MAX_FILE_MIB: ${PEP_DATASET_UPLOAD_MAX_FILE_MIB:-256}
+      PEP_DATASET_UPLOAD_MAX_ENTRIES: ${PEP_DATASET_UPLOAD_MAX_ENTRIES:-1000}
+      PEP_PUBLIC_BASE_URL: ${PEP_PUBLIC_BASE_URL:-http://127.0.0.1:8080}
+      # Leave unset to derive the Secure flag from PEP_PUBLIC_BASE_URL.
+      PEP_COOKIE_SECURE:
+      PEP_SMTP_HOST: ${PEP_SMTP_HOST:-}
+      PEP_SMTP_PORT: ${PEP_SMTP_PORT:-587}
+      PEP_SMTP_USER: ${PEP_SMTP_USER:-}
+      PEP_SMTP_PASSWORD: ${PEP_SMTP_PASSWORD:-}
+      PEP_SMTP_FROM: ${PEP_SMTP_FROM:-}
+      PEP_SMTP_SSL: ${PEP_SMTP_SSL:-auto}
+      PEP_SMTP_STARTTLS: ${PEP_SMTP_STARTTLS:-1}
+      PEP_SMTP_TIMEOUT: ${PEP_SMTP_TIMEOUT:-15}
+      PEP_INITIAL_ADMIN_EMAIL: ${PEP_INITIAL_ADMIN_EMAIL:-}
+      PEP_INITIAL_ADMIN_PASSWORD: ${PEP_INITIAL_ADMIN_PASSWORD:-}
+      PEP_PROFILE_BLAST_TIMEOUT_SECONDS: ${PEP_PROFILE_BLAST_TIMEOUT_SECONDS:-300}
+      HF_HOME: /var/lib/pepplatform/huggingface
+      HF_TOKEN:
+    volumes:
+      - pep_runtime:/var/lib/pepplatform
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health', timeout=3).close()"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 60s
+
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/frontend.Dockerfile
+    depends_on:
+      backend:
+        condition: service_healthy
+        restart: true
+    ports:
+      - "${PEP_HTTP_PORT:-8080}:80"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1/"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+
+volumes:
+  postgres_data:
+  pep_runtime:
