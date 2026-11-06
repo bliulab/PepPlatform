@@ -23,6 +23,19 @@ def test_pretrained_model_source_prefers_local_candidate(tmp_path):
     assert resolved == str(local_model)
 
 
+def test_prepared_model_link_preserves_snapshot_revision(tmp_path):
+    revision = "a695f6045e2e32885fa60af20c13cb35398ce30c"
+    snapshot = tmp_path / "runtime" / "esm2" / "snapshots" / revision
+    snapshot.mkdir(parents=True)
+    alias = tmp_path / "models" / "esm2"
+    alias.parent.mkdir()
+    alias.symlink_to(snapshot, target_is_directory=True)
+    resolved = _resolve_pretrained_model_source(
+        tmp_path, "facebook/esm2_t30_150M_UR50D", [str(alias)], "ESM2", "esm2_model"
+    )
+    assert resolved == str(snapshot)
+
+
 def test_pretrained_model_source_resolves_explicit_relative_path(tmp_path):
     local_model = tmp_path / "custom" / "esm2"
     local_model.mkdir(parents=True)

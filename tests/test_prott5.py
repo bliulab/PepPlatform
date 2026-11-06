@@ -105,6 +105,34 @@ def test_prott5_validate_config_accepts_t5_model():
     assert validated["model_type"] == "t5"
 
 
+def test_prott5_official_config_accepts_omitted_t5_distance_default(tmp_path):
+    config = dict(PROTT5_CONFIG_SIGNATURE, architectures=["T5ForConditionalGeneration"])
+    del config["relative_attention_max_distance"]
+    validated = validate_prott5_config(config)
+    assert validated["relative_attention_max_distance"] == 128
+    assert "relative_attention_max_distance" not in config
+
+    (tmp_path / "config.json").write_text(json.dumps(config), encoding="utf-8")
+    (tmp_path / "tokenizer_config.json").write_text("{}", encoding="utf-8")
+    (tmp_path / "spiece.model").write_bytes(b"spiece")
+    (tmp_path / "pytorch_model.bin").write_bytes(b"weights")
+    assert is_complete_prott5_snapshot(tmp_path)
+
+
+def test_prott5_validate_config_rejects_explicit_wrong_distance():
+    wrong = dict(PROTT5_CONFIG_SIGNATURE, relative_attention_max_distance=256)
+    with pytest.raises(ValueError, match="relative_attention_max_distance"):
+        validate_prott5_config(wrong)
+
+
+def test_prott5_omitted_default_does_not_fill_missing_xl_dimensions():
+    wrong = dict(PROTT5_CONFIG_SIGNATURE)
+    del wrong["relative_attention_max_distance"]
+    del wrong["d_ff"]
+    with pytest.raises(ValueError, match="d_ff"):
+        validate_prott5_config(wrong)
+
+
 def test_prott5_validate_config_rejects_wrong_hidden_size():
     wrong = dict(PROTT5_CONFIG_SIGNATURE, d_model=768)
     with pytest.raises(ValueError, match="architecture signature mismatch"):

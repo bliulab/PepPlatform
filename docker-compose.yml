@@ -17,6 +17,12 @@ services:
     build:
       context: .
       dockerfile: docker/backend.Dockerfile
+      args:
+        TORCH_CHANNEL: cu121
+        PIP_INDEX_URL: ${PEP_PIP_INDEX_URL:-https://pypi.org/simple}
+        TORCH_INDEX_BASE_URL: ${PEP_TORCH_INDEX_BASE_URL:-https://download.pytorch.org/whl}
+        PIP_DEFAULT_TIMEOUT: ${PEP_PIP_TIMEOUT:-120}
+    gpus: all
     depends_on:
       db:
         condition: service_healthy
@@ -53,7 +59,14 @@ services:
       PEP_INITIAL_ADMIN_PASSWORD: ${PEP_INITIAL_ADMIN_PASSWORD:-}
       PEP_PROFILE_BLAST_TIMEOUT_SECONDS: ${PEP_PROFILE_BLAST_TIMEOUT_SECONDS:-300}
       HF_HOME: /var/lib/pepplatform/huggingface
-      HF_TOKEN:
+      HF_ENDPOINT: ${HF_ENDPOINT:-https://huggingface.co}
+      HF_TOKEN: ${HF_TOKEN:-}
+      HF_HUB_OFFLINE: ${HF_HUB_OFFLINE:-0}
+      PEPPLATFORM_OFFLINE_MODE: ${PEPPLATFORM_OFFLINE_MODE:-0}
+      HF_HUB_DOWNLOAD_TIMEOUT: ${HF_HUB_DOWNLOAD_TIMEOUT:-60}
+      HF_HUB_ETAG_TIMEOUT: ${HF_HUB_ETAG_TIMEOUT:-20}
+      HF_HUB_DISABLE_XET: ${HF_HUB_DISABLE_XET:-0}
+      PEP_HF_TLS12: ${PEP_HF_TLS12:-0}
     volumes:
       - pep_runtime:/var/lib/pepplatform
     healthcheck:

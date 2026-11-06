@@ -215,6 +215,11 @@ def validate_prott5_config(config: Mapping[str, object]) -> dict[str, object]:
     if not isinstance(config, Mapping):
         raise ValueError("ProtT5 config must be a mapping")
     normalized = dict(config)
+    # The pinned upstream config omits this field. T5Config defaults it to 128;
+    # retain strict checks for explicit overrides and all XL-specific dimensions.
+    normalized.setdefault(
+        "relative_attention_max_distance", PROTT5_RELATIVE_ATTENTION_MAX_DISTANCE
+    )
     architectures = normalized.get("architectures")
     if isinstance(architectures, list):
         if any(name in {"T5Model", "T5ForConditionalGeneration"} for name in architectures):

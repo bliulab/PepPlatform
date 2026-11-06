@@ -1717,12 +1717,19 @@ class Esm3Encoder:
             # The SDK builder closes over this module-level function. Scope the
             # override to model construction so another route cannot observe a
             # different local source after the constructor returns.
+            # SDK residue/function tokenizers consult the constants module
+            # independently of the checkpoint builder. Point both at the same
+            # complete snapshot so local construction also works offline.
+            esm_constants = importlib.import_module("esm.utils.constants.esm3")
             previous_root = esm_pretrained.data_root
+            previous_constants_root = esm_constants.data_root
             esm_pretrained.data_root = lambda _model: local_root
+            esm_constants.data_root = lambda _model: local_root
             try:
                 self.client = ESM3.from_pretrained("esm3_sm_open_v1", device=self.device)
             finally:
                 esm_pretrained.data_root = previous_root
+                esm_constants.data_root = previous_constants_root
         else:
             if model_key != "esm3_sm_open_v1":
                 raise ValueError(

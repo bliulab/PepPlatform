@@ -1143,7 +1143,7 @@ def resolve_pretrained_model_source(
                 f"{label} local model is incomplete; expected "
                 f"{ESM3_OFFICIAL_WEIGHT_RELATIVE_PATH.as_posix()} under {raw_model}"
             )
-        return raw_model
+        return str(Path(raw_model).resolve())
     rel_path = os.path.join(str(project_root), raw_model)
     if raw_model and os.path.exists(rel_path):
         if normalize_tokenizer_name(tokenizer) == "esm3" and not is_complete_esm3_source(rel_path):
@@ -1151,7 +1151,7 @@ def resolve_pretrained_model_source(
                 f"{label} local model is incomplete; expected "
                 f"{ESM3_OFFICIAL_WEIGHT_RELATIVE_PATH.as_posix()} under {rel_path}"
             )
-        return rel_path
+        return str(Path(rel_path).resolve())
     if normalize_tokenizer_name(tokenizer) == "esmc":
         local_candidates = pretrained_model_local_candidates(project_root, tokenizer, raw_model)
     for path in local_candidates:
@@ -1168,7 +1168,9 @@ def resolve_pretrained_model_source(
                     is None
                 ):
                     continue
-            return path
+            # Prepared model links retain snapshots/<revision> in the resolved
+            # source so runtime provenance agrees with the original artifacts.
+            return str(Path(path).resolve())
     cached = resolve_cached_pretrained_model_source(raw_model, tokenizer)
     if cached:
         return cached

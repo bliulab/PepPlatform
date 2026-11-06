@@ -29,7 +29,7 @@ git clone https://github.com/bliulab/PepPlatform.git
 cd PepPlatform
 ```
 
-Use Python 3.10 and choose the requirements file for your workflow:
+Use Python 3.10.19 and choose the requirements file for your workflow:
 
 | File | Includes |
 | --- | --- |
@@ -41,21 +41,21 @@ Use Python 3.10 and choose the requirements file for your workflow:
 Scientific-library versions match the reference training environment, including
 NumPy `2.2.6`, SciPy `1.15.3`, scikit-learn `1.7.2`, XGBoost `3.1.3` and
 LightGBM `4.6.0`. The tested PyTorch version is `2.5.1`; pretrained routes also use the matching
-`torchvision==0.20.1`. Install CPU builds as shown below, or choose the matching
-CUDA builds from the [PyTorch installation guide](https://pytorch.org/get-started/previous-versions/#v251).
+`torchvision==0.20.1`. The default is the paper's CUDA 12.1 build; explicit CPU
+installation commands are provided below. See the [PyTorch installation guide](https://pytorch.org/get-started/previous-versions/#v251).
 Model weights, training data and BLAST reference databases are prepared separately.
 The explicit versioned CLI also uses `requirements-web.txt` for its metadata and runner components.
 
 ## CLI quick start
 
-Use **Python 3.10** and run commands from the repository root. See the
+Use **Python 3.10.19** and run commands from the repository root. See the
 [installation guide](https://bliulab.github.io/pepplatform-docs/install/cli-only) for environment setup.
 
 ```bash
 python3.10 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
-python -m pip install --index-url https://download.pytorch.org/whl/cpu "torch==2.5.1"
+python -m pip install --index-url https://download.pytorch.org/whl/cu121 "torch==2.5.1"
 python -m pip install -r requirements.txt
 ```
 
@@ -111,19 +111,19 @@ formats, and dated database migration IDs identify the upgrade chain. These
 identifiers support compatibility; they do not select a private experiment run
 or require a dated experiment directory.
 
-For pretrained routes on CPU, add the matching torchvision build and extensions:
-
-```bash
-python -m pip install --upgrade pip
-python -m pip install --index-url https://download.pytorch.org/whl/cpu "torchvision==0.20.1"
-python -m pip install -r requirements-pretrained.txt
-```
-
-The reference GPU environment uses PyTorch `2.5.1+cu121` and torchvision
-`0.20.1+cu121`. On a compatible NVIDIA host, replace the CPU install commands with:
+For pretrained routes, use the paper's default CUDA 12.1 build and extensions:
 
 ```bash
 python -m pip install --index-url https://download.pytorch.org/whl/cu121 "torch==2.5.1" "torchvision==0.20.1"
+python -m pip install -r requirements-pretrained.txt
+```
+
+The expected versions are Torch `2.5.1+cu121`, torchvision `0.20.1+cu121`, CUDA
+`12.1` and cuDNN `9.1`. For a CPU-only installation, choose the CPU wheels explicitly:
+
+```bash
+python -m pip install --index-url https://download.pytorch.org/whl/cpu "torch==2.5.1" "torchvision==0.20.1"
+python -m pip install -r requirements-pretrained.txt
 ```
 
 Then install the requirements layer you need. CPU and GPU builds can produce
@@ -177,9 +177,22 @@ docker compose up --build -d --wait --wait-timeout 300
 
 Open <http://127.0.0.1:8080>. The stack uses PostgreSQL 16, Python 3.10, a Node.js 22
 frontend build and Nginx 1.30. Database state, uploaded data, runs and downloaded
-Hugging Face models persist in Docker volumes. The backend image includes CPU
-PyTorch; GPU access needs separate image and device configuration. Local model
-snapshots are supplied through an optional mount; see the Docker guide.
+Hugging Face models persist in Docker volumes. The backend defaults to the paper's CUDA 12.1 PyTorch build and requests NVIDIA
+GPU access. The host needs NVIDIA Container Toolkit. For CPU-only machines, use
+[the CPU Compose override](docs/deployment.md#cpu-only-deployment); use its two-file
+prefix for all Compose commands. Local model snapshots can still be mounted.
+
+For the exact paper assets, run `docker compose run --rm --no-deps backend python
+docker/download_models.py` after building the backend. It prepares five model families
+and six checkpoints, including both ESM-C sizes. ProtT5 downloads the pinned official
+single file and automatically restores the exact paper format locally; no original
+shard package is needed. See the [model preparation guide](docs/deployment.md#prepare-the-exact-paper-pretrained-assets)
+for mirrors, existing official downloads and optional offline package imports.
+
+This preparation workflow targets paper reproduction. For your own experiments,
+you may use a compatible official ProtT5 snapshot unchanged by setting the training
+option `--prott5_model` to its absolute directory. The guide distinguishes this
+option from the preparation script's `--prott5-source`, which still restores files.
 
 For local development, use the Python environment above and install the Web layer.
 In one terminal, configure the AI-key encryption secret and start the backend:
@@ -201,11 +214,11 @@ Follow the [online Docker deployment guide](https://bliulab.github.io/pepplatfor
 
 ## Development and tests
 
-After installing the CPU PyTorch build above:
+For CPU development/tests, install the CPU Torch and torchvision pair explicitly:
 
 ```bash
 python -m pip install --upgrade pip
-python -m pip install --index-url https://download.pytorch.org/whl/cpu "torchvision==0.20.1"
+python -m pip install --index-url https://download.pytorch.org/whl/cpu "torch==2.5.1" "torchvision==0.20.1"
 python -m pip install -r requirements-dev.txt
 python -m pytest
 python -m ruff check --select E9,F63,F7,F82 .

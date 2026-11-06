@@ -28,7 +28,7 @@ git clone https://github.com/bliulab/PepPlatform.git
 cd PepPlatform
 ```
 
-使用 Python 3.10，按实际用途选择依赖清单：
+使用 Python 3.10.19，按实际用途选择依赖清单：
 
 | 文件 | 安装范围 |
 | --- | --- |
@@ -40,21 +40,21 @@ cd PepPlatform
 科学计算依赖与参考训练环境保持一致，包括 NumPy `2.2.6`、SciPy `1.15.3`、
 scikit-learn `1.7.2`、XGBoost `3.1.3` 和 LightGBM `4.6.0`。
 验证使用的 PyTorch 版本为 `2.5.1`；预训练路线还使用配套的
-`torchvision==0.20.1`。下方命令安装 CPU 构建；GPU 用户请按
-[PyTorch 安装说明](https://pytorch.org/get-started/previous-versions/#v251)选择匹配的 CUDA 构建。
+`torchvision==0.20.1`。默认使用论文的 CUDA 12.1 构建，CPU 安装方式单独列出；
+参见[PyTorch 安装说明](https://pytorch.org/get-started/previous-versions/#v251)。
 模型权重、训练数据和 BLAST 参考数据库需要另行准备。
 显式版本化 CLI 复用 Web 的元数据和运行器组件，因此还需安装 `requirements-web.txt`。
 
 ## CLI 快速上手
 
-使用 **Python 3.10**，在仓库根目录执行以下命令。
+使用 **Python 3.10.19**，在仓库根目录执行以下命令。
 环境准备详见 [CLI 安装指南](https://bliulab.github.io/pepplatform-docs/zh/install/cli-only)。
 
 ```bash
 python3.10 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
-python -m pip install --index-url https://download.pytorch.org/whl/cpu "torch==2.5.1"
+python -m pip install --index-url https://download.pytorch.org/whl/cu121 "torch==2.5.1"
 python -m pip install -r requirements.txt
 ```
 
@@ -105,19 +105,19 @@ Web 运行数据目录可通过 `PEP_RUNTIME_ROOT` 调整。保存的 Protocol/s
 识别产物格式，带日期的数据库迁移 ID 用于识别升级链。这些标识用于兼容性检查，
 不会选择内部实验批次，也不要求存在某个带时间戳的实验目录。
 
-CPU 环境使用预训练路线时，安装配套的 torchvision 和扩展依赖：
-
-```bash
-python -m pip install --upgrade pip
-python -m pip install --index-url https://download.pytorch.org/whl/cpu "torchvision==0.20.1"
-python -m pip install -r requirements-pretrained.txt
-```
-
-参考 GPU 环境使用 PyTorch `2.5.1+cu121` 与 torchvision `0.20.1+cu121`。
-具有兼容 NVIDIA 环境时，可将 CPU 安装命令替换为：
+预训练路线默认使用论文的 CUDA 12.1 构建及扩展依赖：
 
 ```bash
 python -m pip install --index-url https://download.pytorch.org/whl/cu121 "torch==2.5.1" "torchvision==0.20.1"
+python -m pip install -r requirements-pretrained.txt
+```
+
+预期版本为 Torch `2.5.1+cu121`、torchvision `0.20.1+cu121`、CUDA `12.1` 和 cuDNN `9.1`。
+仅使用 CPU 时，显式选择 CPU wheel：
+
+```bash
+python -m pip install --index-url https://download.pytorch.org/whl/cpu "torch==2.5.1" "torchvision==0.20.1"
+python -m pip install -r requirements-pretrained.txt
 ```
 
 之后安装所需依赖清单。CPU 与 GPU 构建可能存在数值差异；复现已保存的运行还需要
@@ -165,8 +165,18 @@ docker compose up --build -d --wait --wait-timeout 300
 
 访问 <http://127.0.0.1:8080>。服务栈使用 PostgreSQL 16、Python 3.10、Node.js 22
 前端构建和 Nginx 1.30。数据库状态、上传数据、运行产物和下载的 Hugging Face 模型
-保存在 Docker 卷中。后端镜像使用 CPU 版 PyTorch；GPU 访问需另行配置镜像和设备。
-本地模型快照可通过可选挂载提供，详见 Docker 指南。
+保存在 Docker 卷中。后端默认使用论文的 CUDA 12.1 PyTorch 构建并请求 NVIDIA GPU，宿主机需配置 NVIDIA Container Toolkit。
+无 GPU 时显式使用[CPU Compose 覆盖方案](docs/deployment.zh-CN.md#cpu-版部署)，所有 Compose 命令
+都保留两文件前缀。本地模型快照仍可通过可选挂载提供。
+
+需要与论文候选实验保持一致时，构建后端后运行 `docker compose run --rm --no-deps backend
+python docker/download_models.py`。该命令覆盖五类模型、六套权重，包括 ESM-C 两种规模；
+ProtT5 从官方固定版本下载单文件，再自动还原原实验格式，无需用户取得原六分片模型包。
+镜像、已有官方下载及可选离线导入见[锁定模型准备说明](docs/deployment.zh-CN.md#准备与论文候选实验一致的模型)。
+
+这项准备流程用于论文复现；做自己的实验时，也可以原样使用兼容的官方 ProtT5，
+通过训练参数 `--prott5_model` 指定其绝对目录。准备参数 `--prott5-source` 仍会执行还原，
+两种参数及 Docker 路径的区别见上述指南。
 
 本地开发使用前文的 Python 环境，安装 Web 依赖。在一个终端配置 AI 密钥加密所需的
 密钥并启动后端：
@@ -188,11 +198,11 @@ python -m uvicorn pepplatform.web.app:app --host 127.0.0.1 --port 8081
 
 ## 开发与测试
 
-按前文安装 CPU 版 PyTorch 后，执行：
+CPU 开发和测试环境显式安装 CPU 版 Torch 与 torchvision：
 
 ```bash
 python -m pip install --upgrade pip
-python -m pip install --index-url https://download.pytorch.org/whl/cpu "torchvision==0.20.1"
+python -m pip install --index-url https://download.pytorch.org/whl/cpu "torch==2.5.1" "torchvision==0.20.1"
 python -m pip install -r requirements-dev.txt
 python -m pytest
 python -m ruff check --select E9,F63,F7,F82 .
