@@ -147,32 +147,25 @@ HTTP 400；ZIP 条目支持标准 Deflate 压缩或不压缩（Stored）。失�
 `requirements-pretrained.txt`。所提供的 Docker 后端默认安装这两层依赖。
 前端依赖在 `frontend/` 目录中通过 `npm ci` 单独安装。
 
-Docker 部署先复制配置并编辑 `.env`：
+Docker 部署先按宿主机硬件选择完整指南，再执行其中的配置和启动命令：
 
-```bash
-cp .env.example .env
-openssl rand -hex 32
-```
+| 方式 | 宿主机要求 | 指南 |
+| --- | --- | --- |
+| CPU | 无 NVIDIA GPU，或选择仅用 CPU | [CPU 部署与运维](docs/deployment-cpu.zh-CN.md) |
+| GPU | 兼容的 NVIDIA GPU、驱动和 NVIDIA Container Toolkit | [GPU 部署与运维](docs/deployment-gpu.zh-CN.md) |
 
-为 `POSTGRES_PASSWORD`、`PEP_SESSION_SECRET` 和 `PEP_LLM_KEY_ENCRYPTION_SECRET`
-分别生成一个独立值；后两个密钥需在重启和备份之间保持稳定。
-首次启动前同时填写两个初始管理员字段，以创建登录账号。
-注册和密码重置邮件还需要 SMTP 配置。完成后启动：
+两篇指南均包含 `.env`、首次登录、模型准备、更新、备份恢复及排查命令。
+CPU 指南在每条 Compose 操作中保留两个配置文件，GPU 指南使用默认 CUDA 12.1 配置。
+已有服务直接使用对应指南的更新章节，保留原密钥、项目名和数据卷。
 
-```bash
-docker compose up --build -d --wait --wait-timeout 300
-```
+服务默认通过 <http://127.0.0.1:8080> 访问，使用 PostgreSQL 16、Python 3.10、Node.js 22
+前端构建和 Nginx 1.30；数据库、上传、运行产物及模型缓存保存在 Docker 卷中。
+**容器 healthy 不表示预训练模型已准备好**，可先用无需预训练权重的短流程验收。
 
-访问 <http://127.0.0.1:8080>。服务栈使用 PostgreSQL 16、Python 3.10、Node.js 22
-前端构建和 Nginx 1.30。数据库状态、上传数据、运行产物和下载的 Hugging Face 模型
-保存在 Docker 卷中。后端默认使用论文的 CUDA 12.1 PyTorch 构建并请求 NVIDIA GPU，宿主机需配置 NVIDIA Container Toolkit。
-无 GPU 时显式使用[CPU Compose 覆盖方案](docs/deployment.zh-CN.md#cpu-版部署)，所有 Compose 命令
-都保留两文件前缀。本地模型快照仍可通过可选挂载提供。
-
-需要与论文候选实验保持一致时，构建后端后运行 `docker compose run --rm --no-deps backend
-python docker/download_models.py`。该命令覆盖五类模型、六套权重，包括 ESM-C 两种规模；
-ProtT5 从官方固定版本下载单文件，再自动还原原实验格式，无需用户取得原六分片模型包。
-镜像、已有官方下载及可选离线导入见[锁定模型准备说明](docs/deployment.zh-CN.md#准备与论文候选实验一致的模型)。
+需要固定论文资产时，执行所选指南的 [CPU 模型准备](docs/deployment-cpu.zh-CN.md#可选准备六套预训练模型)或
+[GPU 模型准备](docs/deployment-gpu.zh-CN.md#可选准备六套预训练模型)。五类模型包含六套权重，
+ProtT5 会从固定官方单文件还原原实验格式。安装量约 22.68 GB；当前在线准备保留缓存后约 45.37 GB，
+额外开销另计。模型清单、磁盘预算、下载源及两种 ProtT5 用法见[共享参考](docs/deployment.zh-CN.md#准备与论文候选实验一致的模型)。
 
 这项准备流程用于论文复现；做自己的实验时，也可以原样使用兼容的官方 ProtT5，
 通过训练参数 `--prott5_model` 指定其绝对目录。准备参数 `--prott5-source` 仍会执行还原，
@@ -191,8 +184,7 @@ python -m uvicorn pepplatform.web.app:app --host 127.0.0.1 --port 8081
 然后访问 <http://127.0.0.1:5173>。后端会加载项目根目录中已有的 `.env`；
 请在其中配置初始管理员或 SMTP 以完成登录。
 
-仓库内的 [Docker 部署与运维指南](docs/deployment.zh-CN.md) 包含首次登录、模型挂载、
-更新、备份恢复和故障排查步骤。
+仓库内的 [Docker 部署入口与共享参考](docs/deployment.zh-CN.md) 提供 CPU/GPU 指南导航、模型与配置说明。
 在线使用方式见 [Docker 部署指南](https://bliulab.github.io/pepplatform-docs/zh/install/docker) 或
 [本地 Web 开发指南](https://bliulab.github.io/pepplatform-docs/zh/install/local-web)。
 

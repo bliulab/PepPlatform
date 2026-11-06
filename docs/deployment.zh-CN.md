@@ -4,9 +4,20 @@
 
 ## 首次部署
 
-基础环境为 Linux amd64，需要 Docker Engine、Docker Compose v2.35 或更新版本、
-Git、OpenSSL 和 curl；Compose 需支持 `--wait`、`--wait-timeout`、`depends_on.restart`、
-GPU 设备请求及 CPU 覆盖文件的 `!reset` 标签。默认后端对齐论文的核心 GPU 软件基线：
+先按宿主机硬件选择一篇完整指南。各指南包含环境配置、首次登录、基础训练验收、
+可选模型准备、更新、备份恢复和故障排查；已有服务从所选指南的更新章节开始。
+
+| 部署方式 | 适用环境 | 完整操作指南 |
+| --- | --- | --- |
+| CPU | 无 NVIDIA GPU，或选择仅用 CPU | [CPU 部署与运维](deployment-cpu.zh-CN.md) |
+| GPU | 兼容的 NVIDIA GPU、驱动及 NVIDIA Container Toolkit | [GPU 部署与运维](deployment-gpu.zh-CN.md) |
+
+本页集中说明共享配置和模型原理。所有部署及运维 Compose 命令均放在对应硬件指南中，
+无需在共享示例中手动替换硬件参数。CPU、GPU 使用相同数据卷和冻结模型资产。
+项目支持 Linux amd64、Docker Engine 和 Docker Compose v2.35 或更新版本；
+此版本为项目支持下限。
+
+核心依赖基线：
 
 | 组件 | 默认论文 GPU 版 | 显式 CPU 版 |
 | --- | --- | --- |
@@ -17,93 +28,20 @@ GPU 设备请求及 CPU 覆盖文件的 `!reset` 标签。默认后端对齐论�
 | ESM / SentencePiece | 3.2.0 / 0.2.1 | 相同 |
 | Hugging Face Hub / Safetensors | 0.36.0 / 0.7.0 | 相同 |
 
-默认方案要求宿主机具有兼容的 NVIDIA 显卡、驱动及已配置好的
-[NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html#configuring-docker)，
-先在宿主机确认 `nvidia-smi` 可用。镜像构建只检查编译版本，不要求构建时能访问 GPU；
-GPU 实际执行能力在容器启动后单独检查。没有 GPU 容器支持时，选择[CPU 方案](#cpu-版部署)。
-构建期间需要访问 Docker Hub、Debian 软件源、所选 PyTorch wheel 源、PyPI 和 npm。
-为镜像、数据集、训练产物及模型权重分别预留空间；训练内存需求取决于路线和数据规模。
-核心软件基线一致仍需配合同一实验的数据、配置及硬件条件，才能评估数值复现。
-
-在仓库根目录操作：
-
-```bash
-git clone https://github.com/bliulab/PepPlatform.git
-cd PepPlatform
-cp .env.example .env
-openssl rand -hex 32
-```
-
-启动前编辑 `.env`：
-
-- 用 OpenSSL 命令**分别生成三个独立值**，填入 `POSTGRES_PASSWORD`、
-  `PEP_SESSION_SECRET` 和 `PEP_LLM_KEY_ENCRYPTION_SECRET`。
-  数据库密码会拼入连接 URL，建议直接使用生成的十六进制字符串。
-- 填写 `PEP_INITIAL_ADMIN_EMAIL` 和 `PEP_INITIAL_ADMIN_PASSWORD`，创建首次登录账号。
-  密码至少八个字符，建议使用高强度密码。此账号无需 SMTP 即可登录；
-  重启时这些字段不会重置已有账号的密码。
-- 将 `PEP_PUBLIC_BASE_URL` 改为用户实际访问地址。更换端口时同时修改此 URL 与
-  `PEP_HTTP_PORT`。使用 TLS 反向代理时填写 HTTPS 地址，后端据此启用安全 Cookie。
-- 保持 `PEP_ENV=production`、`PEP_AUTH_DEBUG_CODES=0`。注册和密码重置需要 SMTP；
-  初始管理员登录不依赖 SMTP。Tavily 和 Hugging Face token 为可选集成配置。
-
-```bash
-chmod 600 .env
-docker compose config --quiet
-docker compose build
-docker compose run --rm --no-deps backend python docker/check_runtime.py --channel cu121 --device cuda
-docker compose up -d --wait --wait-timeout 300
-docker compose ps
-curl --fail http://127.0.0.1:8080/api/health
-```
-
-打开 <http://127.0.0.1:8080>，用初始管理员账号登录。后端在提供服务前自动运行
-Alembic 数据库迁移；Nginx 等待后端健康检查通过后启动。新安装不附带研究数据或
-预训练权重。上传自己的数据，或生成用于验证流程的微型合成数据：
-
-```bash
-python3 tools/build_web_route_smoke_dataset.py --output /tmp/pepplatform-demo.zip
-```
-
-将 ZIP 上传为**肽段功能预测**数据集。无需下载预训练权重的短流程检查可选择
-**k-mer → One-hot → CNN**，训练一轮，使用较小 batch size。确认训练完成并出现模型，
-再对 `AAAAAAAAAAAA`、`CCCCCCCCCCCC` 做推理，确认返回分数。合成数据结果不具有科学意义。
-
-也可自动检查（仅需 Python 3 标准库）：设置环境变量 `PEP_SMOKE_EMAIL`、
-`PEP_SMOKE_PASSWORD` 为登录账号，再执行：
-
-```bash
-python3 tools/check_web_deployment.py --state /tmp/pepplatform-smoke.json
-```
-
-脚本会创建合成数据集、一轮训练和模型，验证认证、推理与模型版本封存，
-并保留资源供检查。重启、更新或恢复后，增加 `--verify-existing` 参数检查同一批资源。
-其他地址通过 `--base-url` 指定。
+服务健康、模型资源可用和论文数值复现分别需要验收。Web 服务可以先使用无需预训练权重的路线；
+预训练路线需要对应模型；完整论文复现还需匹配源码、数据划分、实验配置、随机种子和硬件。
 
 ### CPU 版部署
 
-沿用相同的 `.env`，在**每一次** CPU 命令中叠加两个 Compose 文件，包括模型准备、
-后续更新、备份和恢复：
+进入 [CPU 完整指南](deployment-cpu.zh-CN.md)。每条操作均明确保留基础文件和 CPU 覆盖文件，
+包括模型准备、更新、备份恢复和可选代理。CPU 覆盖文件选择 CPU wheel 并清除 GPU 请求，无需 NVIDIA Container Toolkit。
+CPU 是兼容部署选项，不承诺与论文 GPU 训练数值逐位一致。
 
-```bash
-docker compose -f docker-compose.yml -f docker-compose.cpu.yml config --quiet
-docker compose -f docker-compose.yml -f docker-compose.cpu.yml build
-docker compose -f docker-compose.yml -f docker-compose.cpu.yml run --rm --no-deps \
-  backend python docker/check_runtime.py --channel cpu --device cpu
-docker compose -f docker-compose.yml -f docker-compose.cpu.yml up -d --wait --wait-timeout 300
-```
+### GPU 版部署
 
-CPU 覆盖文件选择 CPU wheel，并清除 GPU 请求，无需 NVIDIA Container Toolkit。
-两种方案使用相同的冻结权重和 ProtT5 还原流程。CPU 是兼容部署选项，不承诺与论文 GPU
-训练数值逐位一致；切换方案时重新构建后端。如还需要论文模型资产，使用同一 CPU 前缀准备和检查：
-
-```bash
-docker compose -f docker-compose.yml -f docker-compose.cpu.yml run --rm --no-deps \
-  backend python docker/download_models.py
-docker compose -f docker-compose.yml -f docker-compose.cpu.yml run --rm --no-deps \
-  backend python docker/download_models.py --check-only --smoke-test --device cpu
-```
-
+进入 [GPU 完整指南](deployment-gpu.zh-CN.md)。宿主机需具备兼容 NVIDIA GPU、驱动和已配置好的
+[NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html#configuring-docker)。
+构建只检查依赖版本；独立运行环境检查会验证 CUDA 实际执行。切换 CPU/GPU 方案时重新构建后端。
 
 ### 国内镜像与下载源
 
@@ -142,7 +80,6 @@ GPU 方案自动追加 `/cu121`，CPU 方案自动追加 `/cpu`。Dockerfile 先
 Docker 服务的基础镜像代理或 registry mirror 属于单独的宿主机配置，
 设置 pip 或 Hugging Face 镜像不会改变基础镜像的拉取路径。
 
-
 ## 准备与论文候选实验一致的模型
 
 ### 先选择用途
@@ -168,44 +105,22 @@ Docker 服务的基础镜像代理或 registry mirror 属于单独的宿主机�
 | ESM3 Open Small | `EvolutionaryScale/esm3-sm-open-v1`，`47f0545b2b6daf26a93439a3cd610f4f7f3d5478` |
 
 ProtT5 准备流程会下载固定版本的官方 `.bin`，再根据小型 `docker/prott5.restore.json`
-配方在本地还原原实验文件，逐文件核对已有锁定清单。用户无需下载你提供的六分片模型包，
+配方在本地还原原实验文件，逐文件核对已有锁定清单。无需另行取得原六分片模型包，
 训练继续使用原格式，从而保留原加载过程及随机数行为。
 完整模型约 3B 参数，平台加载其中约 1.2B 参数的编码器；详见[验证说明](prott5-equivalence.zh-CN.md)。
 
-权重不提交 Git，也不写入应用镜像。安装后的六套资源约 22.7 GB；在线准备还会保留官方缓存。
-ProtT5 官方 `.bin` 与还原文件各约 11.3 GB。下载缓存和安装副本建议至少预留 50 GB，
-额外模型包、镜像、业务数据和旧版本备份另计。
+权重不提交 Git，也不写入应用镜像。安装文件合计 22.68 GB（21.13 GiB）；当前在线准备保留源缓存后约 45.37 GB（42.25 GiB），额外开销另计。
+详见[磁盘预算与省空间路径](#模型下载的磁盘空间)。
 
 ### 目标服务器在线准备并启动
 
-复现论文实验时，先配置 `.env`，为受限资源填写已获授权的令牌，再执行：
-
-```bash
-docker compose build
-docker compose run --rm --no-deps backend python docker/download_models.py
-docker compose run --rm --no-deps backend python docker/download_models.py --check-only
-docker compose up -d --wait --wait-timeout 300
-```
-
-准备命令覆盖全部六套权重，复用合格安装和下载缓存，ProtT5 只需还原一次并保存在运行卷中。
-准备阶段不启动数据库，也不执行数据库迁移。
-
-已有固定版本的官方 ProtT5 快照时，可只读挂载并复用：
-
-```bash
-docker compose run --rm --no-deps \
-  -v "$PWD/backup/prott5-official:/official-prott5:ro" \
-  backend python docker/download_models.py --prott5-source /official-prott5
-```
-
-目录须包含固定版本的 `pytorch_model.bin`、`config.json`、`spiece.model`、
-`special_tokens_map.json`、`tokenizer_config.json`，五个文件均会校验。
-该选项不会为 ProtT5 发起网络请求，但仍会还原论文格式，其他缺失模型按正常流程准备；
-不能与导出、导入或检查模式混用。直接加载原文件使用下节介绍的训练参数。
+按所选硬件执行完整步骤：[CPU 在线准备](deployment-cpu.zh-CN.md#在线准备) · [GPU 在线准备](deployment-gpu.zh-CN.md#在线准备)。
+两篇指南也分别给出复用官方 ProtT5 快照的命令；`--prott5-source` 只省去 ProtT5 下载，仍会还原论文格式。
+准备容器不启动数据库、不执行数据库迁移，重复执行会复用合格安装和下载缓存。
 
 裸机 Python 环境可运行 `python docker/download_models.py --root backup/pretrained`，
 训练时将 `--prott5_model` 指向 `backup/pretrained/models/prott5` 的绝对路径。
-论文复现应使用这个准备后的入口；直接加载官方 `.bin` 原目录仍有随机数行为差异。
+论文复现应使用准备后的入口；直接加载官方 `.bin` 原目录仍有随机数行为差异。
 
 ### 独立实验：原样使用官方 ProtT5
 
@@ -245,31 +160,9 @@ python3 docker/download_models.py --export backup/pretrained-models \
 
 ### 可选：目标服务器导入模型包并启动
 
-先按前文配置 `.env`。导入命令独立运行，不启动数据库，也不执行数据库迁移：
-
-```bash
-docker compose build
-docker compose run --rm --no-deps \
-  -v "$PWD/backup/pretrained-models:/model-package:ro" \
-  backend python docker/download_models.py --import-from /model-package
-docker compose run --rm --no-deps backend python docker/download_models.py --check-only
-docker compose up -d --wait --wait-timeout 300
-```
-
-导入全程无需联网，逐文件校验后才启用模型，全部六套通过才返回成功。
-模型保存在已有 `pep_runtime` 卷的 `/var/lib/pepplatform/pretrained`，镜像中的
-`/app/models` 指向其模型入口。公开快照保留 `snapshots/<revision>` 层级，分片模型保留
-原目录内容与指纹。原有运行卷备份已覆盖这些文件；模型包也应另行保存。
-再次执行会校验并复用已有文件，损坏的安装副本会保留为 `.previous-*` 后重装；
-准备失败可修复模型包后重试，不能将部分成功当成准备完成。
-
-默认 GPU 检查会在 CUDA 上逐个加载模型、运行短序列、核对参数实际设备并释放模型。
-CUDA 不可用或依赖版本不符时明确失败，需要预留足够主机内存和显存：
-
-```bash
-docker compose run --rm --no-deps backend \
-  python docker/download_models.py --check-only --smoke-test --device cuda
-```
+完整导入与设备检查命令：[CPU 离线导入](deployment-cpu.zh-CN.md#离线导入) · [GPU 离线导入](deployment-gpu.zh-CN.md#离线导入)。
+导入逐文件校验，全部六套通过才返回成功；模型保存在 `pep_runtime` 卷的 `/var/lib/pepplatform/pretrained`。
+镜像中的 `/app/models` 指向安装入口，运行卷备份已覆盖这些文件。外部模型包仍应另行保存。
 
 ### 官方源、镜像与离线模式
 
@@ -294,7 +187,9 @@ docker compose run --rm --no-deps backend \
 
 ## 预训练模型与邮件
 
-下载的 Hugging Face 文件位于运行卷中的 `HF_HOME`，重建容器后仍保留。
+下载缓存位于运行卷中的 `HF_HOME=/var/lib/pepplatform/huggingface`，重建容器后仍保留。
+它与 `pretrained` 中的安装副本是独立文件；后者在本地安装完成后可独立加载。
+
 如已有本地模型快照，可创建可选的 `compose.models.yml`：
 
 ```yaml
@@ -306,100 +201,41 @@ services:
       PEPPLATFORM_OFFLINE_MODE: "1"
 ```
 
-将完整快照放到所选路线对应目录，例如 `models/esm2`、`models/protbert`、
-`models/prott5` 或 `models/EvolutionaryScale/esmc-600m-2024-12`，然后组合启动：
+完整快照放到路线对应目录，例如 `models/esm2`、`models/protbert`、`models/prott5` 或
+`models/EvolutionaryScale/esmc-600m-2024-12`。此挂载会覆盖镜像中 `/app/models` 的默认入口，
+应确认所需模型均在挂载目录中。挂载本身不下载模型，也不授予受限模型访问权限。
+组合启动命令见 [CPU 可选配置](deployment-cpu.zh-CN.md#可选配置与覆盖文件)或 [GPU 可选配置](deployment-gpu.zh-CN.md#可选配置与覆盖文件)，
+后续操作保留相同持久覆盖文件。需要在线下载时移除离线设置，并遵循提供方的许可证和授权要求。
 
-```bash
-docker compose -f docker-compose.yml -f compose.models.yml up --build -d --wait
-```
-
-后续操作始终使用同一组 Compose 文件。需要在线下载时移除离线设置。
-挂载本身不会下载权重或授予受限模型访问权限；需遵循提供方的模型许可证和授权要求。
-
-邮件配置使用 `PEP_SMTP_HOST`、`PEP_SMTP_PORT`、`PEP_SMTP_USER`、
-`PEP_SMTP_PASSWORD`、`PEP_SMTP_FROM`。587 端口通常使用 STARTTLS，465 端口自动使用
-隐式 TLS，发件人应与认证邮箱一致。QQ 邮箱密码填邮箱授权码。
-修改环境后执行 `docker compose up -d --wait`；`docker compose restart` 不会重新加载 `.env`。
+邮件配置使用 `PEP_SMTP_HOST`、`PEP_SMTP_PORT`、`PEP_SMTP_USER`、`PEP_SMTP_PASSWORD` 和 `PEP_SMTP_FROM`。
+587 端口通常使用 STARTTLS，465 端口自动使用隐式 TLS，发件人应与认证邮箱一致；QQ 邮箱密码填邮箱授权码。
+修改 `.env` 后，使用所选指南的环境应用命令重新创建服务；普通重启不会重新加载环境文件。
 
 ## 更新与持久化
 
-保持仓库目录和 Compose 项目名稳定，它们决定使用哪些命名卷。
-`postgres_data` 保存数据库；`pep_runtime` 保存上传数据、训练产物、版本化输入和
-Hugging Face 缓存。部署使用单后端进程；更新前需等待训练完成或主动取消，
-后端重启会取消进行中的实验。
+保持仓库目录和 Compose 项目名稳定，保留三个密钥和持久覆盖文件。`postgres_data` 保存数据库；
+`pep_runtime` 保存上传、训练产物、版本化输入、预训练安装和 Hugging Face 缓存。
+部署使用单后端进程，重启会取消进行中的实验。
 
-完成备份后更新：
-
-```bash
-git pull --ff-only
-docker compose up --build -d --wait --wait-timeout 300
-docker compose ps
-curl --fail http://127.0.0.1:8080/api/health
-```
-
-检查登录、已有数据集和已有模型推理。三个密钥保持不变：修改 `.env` 中的数据库密码
-不会修改已初始化数据库的用户密码；会话密钥用于保留会话，加密密钥用于读取已保存的
-AI 提供方 API key。`docker compose down` 保留命名卷，**`down -v` 会删除卷内数据**。
+完整升级步骤：[CPU 更新](deployment-cpu.zh-CN.md#更新与持久化) · [GPU 更新](deployment-gpu.zh-CN.md#更新与持久化)。
 
 ## 备份与恢复
 
-等待训练结束，停止两个应用服务，取得一致的数据库与运行文件备份；数据库保持运行。
-在仓库根目录执行，每次使用新的备份目录：
+先结束训练，停止两个应用服务，保持数据库运行，再取得一致的数据库及运行文件备份。
+备份环境文件、覆盖文件、源码版本及外部模型；恢复使用匹配源码和空目标卷。
+完整步骤：[CPU 备份恢复](deployment-cpu.zh-CN.md#备份与恢复) · [GPU 备份恢复](deployment-gpu.zh-CN.md#备份与恢复)。
 
-```bash
-mkdir -m 700 backup
-docker compose stop frontend backend
-docker compose exec -T db sh -c 'pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Fc' > backup/database.dump
-docker compose run --rm --no-deps -T backend tar -C /var/lib/pepplatform -czf - . > backup/runtime.tar.gz
-cp .env backup/env
-git rev-parse HEAD > backup/source-commit.txt
-docker compose up -d --wait
-```
-
-逐项确认命令成功，并将备份安全存放到服务器之外；备份环境文件包含凭据。
-本地挂载的模型快照需额外备份，或记录其精确版本的获取方式；同时保存 Compose
-覆盖文件以及匹配的应用源码或镜像。
-
-恢复时，使用记录的源码版本、新工作目录与空卷。先将备份的环境文件恢复为 `.env`，
-补回 Compose 覆盖文件及模型快照，保持数据库用户名和库名与备份一致。然后执行：
-
-```bash
-docker compose build
-docker compose up -d --wait db
-docker compose run --rm --no-deps -T backend tar -C /var/lib/pepplatform -xzf - < backup/runtime.tar.gz
-docker compose exec -T db sh -c 'pg_restore -U "$POSTGRES_USER" -d "$POSTGRES_DB" --exit-on-error --no-owner --no-privileges' < backup/database.dump
-docker compose up -d --wait --wait-timeout 300
-```
-
-恢复后先检查登录、数据集和已有模型推理，再接入用户流量。
-升级失败需将数据库、运行文件与对应源码或镜像一起恢复，单独回退代码不会撤销数据库迁移。
+升级失败时，数据库、运行文件与匹配源码或镜像一起恢复；只回退代码不会撤销数据库迁移。
 
 ## 故障排查
 
-```bash
-docker compose ps -a
-docker compose logs --tail=200 db backend frontend
-```
-
-- **缺少密钥：** 补齐三个必填密钥，再执行 `docker compose config --quiet`。
-  避免公开完整渲染后的 Compose 配置，其中包含凭据。
-- **构建下载失败：** 根据失败步骤检查主机和容器网络、代理。npm 镜像可通过
-  `docker compose build frontend --build-arg NPM_REGISTRY=https://your-registry.example`
-  指定，然后正常启动。
-- **后端不健康或 HTTP 502：** 查看后端迁移、启动日志及数据库健康状态；
-  健康接口正常后再尝试训练。
-- **无法登录：** 新账号需同时填写两个初始管理员字段，或使用可用 SMTP 完成注册与重置。
-  修改初始管理员字段不会替换已有密码。HTTP 本地测试需使用非 Secure Cookie，
-  检查 `PEP_PUBLIC_BASE_URL` 和 `PEP_COOKIE_SECURE` 覆盖值。
-- **找不到预训练模型：** 提供所选路线的完整快照，或允许在线下载并配置必要的 Hugging Face 授权。
-- **上传 HTTP 413：** 检查 `.env` 上传限制及 Nginx 的 512 MiB 请求上限。
-  改环境配置后重建后端容器，改 `docker/nginx.conf` 后重新构建前端镜像。
+先按 [CPU 排查步骤](deployment-cpu.zh-CN.md#故障排查)或 [GPU 排查步骤](deployment-gpu.zh-CN.md#故障排查)查看状态及日志。
+下载需区分 Docker 基础镜像、构建依赖和运行时模型三层网络，配置其中一层不会自动改变其他层。
 
 如果 Linux 主机的代理只监听 `127.0.0.1`，构建容器无法通过自己的回环地址访问它。
-主机已设置 `http_proxy` / `https_proxy` 时，可临时创建构建网络覆盖文件：
+主机已设置 `http_proxy` / `https_proxy` 时，可创建本地 `compose.build-network.yml`：
 
 ```yaml
-# compose.build-network.yml，仅供这种构建网络环境使用
 services:
   backend:
     build:
@@ -409,22 +245,45 @@ services:
       network: host
 ```
 
-```bash
-docker compose -f docker-compose.yml -f compose.build-network.yml build --build-arg http_proxy --build-arg https_proxy
-docker compose up -d --wait --wait-timeout 300
-```
-
-此设置只改变构建网络，不改变服务运行时的 Compose 网络。代理地址和凭据不应写入
-Dockerfile 或 Git。
+构建命令见相应指南的可选配置章节。此覆盖只改变构建网络，不改变运行时 Compose 网络。
+代理地址和凭据不应写入 Dockerfile 或提交 Git。
 
 ### 模型下载的磁盘空间
 
-六套已安装模型约占 21.1 GiB，Hugging Face 下载缓存还会保留一份源文件。
-建议为缓存、安装文件和重试预留至少 100 GB。检查 Docker 数据目录所在磁盘的空间；
-仓库所在磁盘的空闲空间并不等于 Docker 卷的可用空间。
+预算应区分最终安装、准备期间保留的源文件和业务数据。以下按
+[`models.lock.json`](../docker/models.lock.json) 与 [ProtT5 还原配方](../docker/prott5.restore.json)中的文件大小求和，
+GB 为十进制，GiB 为二进制单位：
 
-全新部署可把运行卷放到大容量磁盘。先在该磁盘创建目录，将下面示例中的
-`/mnt/data/pepplatform-runtime` 替换为实际路径，保存为 `compose.model-storage.yml`：
+| 内容或路径 | 模型文件大小 |
+| --- | ---: |
+| 六套安装文件 | 22.68 GB / 21.13 GiB |
+| 在线准备保留的 Hugging Face 源文件缓存 | 22.68 GB / 21.13 GiB |
+| 当前在线流程：源缓存与安装副本合计 | 45.37 GB / 42.25 GiB |
+| 离线包在另一块盘：目标运行卷的安装文件 | 22.68 GB / 21.13 GiB |
+| 离线包与安装文件在同一块盘 | 45.37 GB / 42.25 GiB |
+
+脚本把下载缓存复制成独立安装文件；安装暂存目录校验后通过重命名启用，正常首次安装不会因此额外再留一整份。
+ProtT5 官方源 `.bin` 与还原分片各约 11.28 GB，已包含在上表，不能再重复叠加。
+上述数字是正常流程的文件预算，不含额外 Xet 缓存、失败下载、损坏安装保留的 `.previous-*` 或其他模型。
+因此应在该预算之外留余量。100 GB 可作为容纳额外缓存和修复副本的宽裕示例，**不是统一最低要求**。
+
+Docker 镜像与构建缓存、数据库、上传数据、训练产物、模型包副本和备份都需单独预算。
+备份完整运行卷时会包含其中的安装文件和缓存，权重的压缩收益可能有限。
+
+更省空间的现有用法：
+
+- 将离线包放另一块盘，导入只在目标卷写入安装副本；镜像构建依赖仍需另行准备。
+- 六套安装及设备检查通过后，可按 [CPU 缓存清理](deployment-cpu.zh-CN.md#可选清理模型下载缓存)或 [GPU 缓存清理](deployment-gpu.zh-CN.md#可选清理模型下载缓存)回收固定源缓存，再离线复验。此方式降低长期占用，不降低首次在线准备峰值；共享 blob 和其他缓存会影响回收量。
+- 单纯把缓存移到另一块盘不会降低总用量，但可分摊各磁盘的容量需求。当前脚本没有逐模型安装后自动清缓存的模式。
+
+默认运行卷与缓存均位于 Docker 管理的存储中；仓库旁的空闲空间不能代表卷容量：
+
+```bash
+docker_root="$(docker info --format '{{.DockerRootDir}}')"
+df -h "$docker_root" .
+```
+
+全新部署可将运行卷绑定到大容量磁盘。先创建实际目录，替换路径并保存为本地 `compose.model-storage.yml`：
 
 ```yaml
 volumes:
@@ -436,21 +295,15 @@ volumes:
       device: /mnt/data/pepplatform-runtime
 ```
 
-在所有 Compose 命令中叠加此文件；CPU 用户同时保留 CPU 覆盖文件：
-
-```bash
-docker compose -f docker-compose.yml -f compose.model-storage.yml run --rm --no-deps \
-  backend python docker/download_models.py
-```
-
-此示例用于新建运行卷。已有部署迁移前需备份并迁移完整运行目录，再采用新的卷名称。
+检查该目录所在磁盘的空间。此示例用于**新建运行卷**；已有卷不会因更改选项自动迁移。
+已有部署需先备份并迁移完整运行目录，再采用新的卷名称，避免把空目录当成原数据。
+每次操作保留此持久覆盖文件，命令见对应硬件指南的可选配置章节。
 
 ### 模型下载的容器代理
 
-Docker 服务代理、构建代理和后端运行时代理需要分别配置。只在宿主机设置代理，
-不会自动把代理传入执行下载命令的后端容器。需要代理时，可保存以下本地覆盖文件
-`compose.download-proxy.yml`，并在本地 `.env` 中设置
-`PEP_DOWNLOAD_PROXY=http://host.docker.internal:7890`，将端口替换为实际值：
+Docker 服务代理、构建代理和后端运行时代理分别配置。宿主机代理不会自动传入下载容器。
+需要时保存本地 `compose.download-proxy.yml`，并在 `.env` 设置
+`PEP_DOWNLOAD_PROXY=http://host.docker.internal:7890`，替换实际端口：
 
 ```yaml
 services:
@@ -466,13 +319,12 @@ services:
       no_proxy: localhost,127.0.0.1,db,backend,frontend
 ```
 
-代理需监听容器可访问的宿主机地址；仅监听宿主机 `127.0.0.1` 的代理无法通过
-此桥接网络示例访问。下载命令增加 `-f compose.download-proxy.yml`，
-需要自定义存储或 CPU 方案时再叠加相应文件。代理只改变连接路径，
-模型仍由固定端点提供并接受原锁定清单校验。
+代理需监听容器可访问的宿主机地址；仅绑定宿主机 `127.0.0.1` 时，上述桥接网络方式无法访问。
+命令见 [CPU 可选配置](deployment-cpu.zh-CN.md#可选配置与覆盖文件)或 [GPU 可选配置](deployment-gpu.zh-CN.md#可选配置与覆盖文件)。
+代理只改变连接路径，仍从所选端点取得固定模型并校验哈希。
 
-如果代理只接受宿主机回环连接，或桥接连接的 TLS 请求持续失败，可先用相同镜像确认
-宿主机网络可用，再为一次性模型准备增加 `compose.download-host.yml`：
+若代理仅接受宿主机回环连接，或桥接网络的 TLS 持续失败，先用同一镜像验证宿主机网络连通性。
+一次性准备可增加本地 `compose.download-host.yml`：
 
 ```yaml
 services:
@@ -480,16 +332,9 @@ services:
     network_mode: host
 ```
 
-此时将本地 `PEP_DOWNLOAD_PROXY` 改为宿主机实际回环地址，例如
-`http://127.0.0.1:7890`，并执行：
-
-```bash
-docker compose -f docker-compose.yml -f compose.download-proxy.yml -f compose.download-host.yml \
-  run --rm --no-deps backend python docker/download_models.py
-```
-
-存储和 CPU 覆盖文件仍按需叠加。此宿主机网络覆盖仅用于一次性模型准备；
-完整 Web 服务继续使用其正常 Compose 网络。
+将 `PEP_DOWNLOAD_PROXY` 改为实际宿主机回环地址，例如 `http://127.0.0.1:7890`。
+组合命令仍见对应硬件指南，同时保留存储等持久覆盖文件。此宿主机网络覆盖仅用于一次性准备，
+完整 Web 服务继续使用正常 Compose 网络。
 
 ### 代理的 TLS 兼容模式
 

@@ -159,35 +159,28 @@ Install `requirements-web.txt` for the local backend, and additionally install
 backend installs both. Frontend dependencies are installed separately with
 `npm ci` inside `frontend/`.
 
-For Docker, copy the example configuration and edit `.env`:
+For Docker, choose the complete guide for your host before running configuration and startup commands:
 
-```bash
-cp .env.example .env
-openssl rand -hex 32
-```
+| Profile | Host requirements | Guide |
+| --- | --- | --- |
+| CPU | No NVIDIA GPU, or intentional CPU execution | [CPU deployment and operations](docs/deployment-cpu.md) |
+| GPU | Compatible NVIDIA GPU, driver and NVIDIA Container Toolkit | [GPU deployment and operations](docs/deployment-gpu.md) |
 
-Generate a separate value for each of `POSTGRES_PASSWORD`, `PEP_SESSION_SECRET`
-and `PEP_LLM_KEY_ENCRYPTION_SECRET`; keep the latter two stable across restarts
-and backups. Set both initial-admin fields to create your login account on first
-startup. Configure SMTP for registration and password-reset emails. Then run:
+Both guides cover `.env`, first login, model preparation, updates, backup/restore and troubleshooting.
+Every CPU Compose operation retains both configuration files; the GPU guide uses the default CUDA 12.1
+profile. For an existing service, use its update section and retain secrets, the project name and volumes.
 
-```bash
-docker compose up --build -d --wait --wait-timeout 300
-```
+The default address is <http://127.0.0.1:8080>. The stack uses PostgreSQL 16, Python 3.10, a Node.js 22
+frontend build and Nginx 1.30. Database state, uploads, run artifacts and model caches persist in Docker
+volumes. **Healthy containers do not establish pretrained-model readiness**; start with the basic
+verification route that needs no pretrained weights.
 
-Open <http://127.0.0.1:8080>. The stack uses PostgreSQL 16, Python 3.10, a Node.js 22
-frontend build and Nginx 1.30. Database state, uploaded data, runs and downloaded
-Hugging Face models persist in Docker volumes. The backend defaults to the paper's CUDA 12.1 PyTorch build and requests NVIDIA
-GPU access. The host needs NVIDIA Container Toolkit. For CPU-only machines, use
-[the CPU Compose override](docs/deployment.md#cpu-only-deployment); use its two-file
-prefix for all Compose commands. Local model snapshots can still be mounted.
-
-For the exact paper assets, run `docker compose run --rm --no-deps backend python
-docker/download_models.py` after building the backend. It prepares five model families
-and six checkpoints, including both ESM-C sizes. ProtT5 downloads the pinned official
-single file and automatically restores the exact paper format locally; no original
-shard package is needed. See the [model preparation guide](docs/deployment.md#prepare-the-exact-paper-pretrained-assets)
-for mirrors, existing official downloads and optional offline package imports.
+For fixed paper assets, follow [CPU model preparation](docs/deployment-cpu.md#optional-prepare-all-six-pretrained-checkpoints)
+or [GPU model preparation](docs/deployment-gpu.md#optional-prepare-all-six-pretrained-checkpoints).
+Five model families require six checkpoints. ProtT5 restores the paper format from the pinned official
+single file. Installed files total about 22.68 GB; current online preparation retaining source caches
+uses about 45.37 GB, excluding overhead. The [shared reference](docs/deployment.md#prepare-the-exact-paper-pretrained-assets)
+covers checkpoint identities, disk budgets, download sources and both ProtT5 workflows.
 
 This preparation workflow targets paper reproduction. For your own experiments,
 you may use a compatible official ProtT5 snapshot unchanged by setting the training
@@ -207,8 +200,8 @@ In another terminal, use Node.js 22 and run `cd frontend`, `npm ci`, then
 `npm run dev`. Open <http://127.0.0.1:5173>. The backend loads a project `.env`
 if present; configure the initial administrator or SMTP there for sign-in.
 
-The repository includes a [Docker operations guide](docs/deployment.md) covering
-first login, model mounts, updates, backups, recovery and troubleshooting.
+The [Docker deployment selector and shared reference](docs/deployment.md) links both hardware guides
+and explains shared model and configuration details.
 Follow the [online Docker deployment guide](https://bliulab.github.io/pepplatform-docs/install/docker) or
 [local web development guide](https://bliulab.github.io/pepplatform-docs/install/local-web) to get started.
 
