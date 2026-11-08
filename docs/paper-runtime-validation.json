@@ -1,0 +1,3751 @@
+{
+  "schema_version": 1,
+  "created_at": "2026-11-06T07:17:47.811922+00:00",
+  "status": "PASS",
+  "scope": "Six-checkpoint cold preparation, exact ProtT5 restoration, new GPU/CPU image runtime and offline loading, RNG/features/head/three-step comparisons. No full 100-candidate retraining.",
+  "reference": {
+    "results_id": "function_policy_completion_20261022T0620Z_aupr_trapezoidal_v2",
+    "registration_sha256": "eb16353b3aa8a7441c18f2e53a8c039c5f2e45d91649227b346825266c82e8fd",
+    "results_index_sha256": "0e7bdb65a95ce26bb186a5efe1cff740a52bacb9e92c28734ed08c0ca8c6c71c",
+    "protocol_sha256": "d92d5d831cff8873eccf02a567fd5c7f7db55c08e11af6d886cb2388c1628be3",
+    "cohort_sha256": "778c71578722bddd3d254fbf1363a1abf74d2e624ccf36d2aec962b376fa5f35",
+    "candidate_count": 100,
+    "counts": {
+      "pep_function": 35,
+      "pep_hlaii": 20,
+      "pep_mhci": 20,
+      "pep_protein_interaction": 25
+    }
+  },
+  "model_assets": {
+    "model_families": 5,
+    "checkpoint_count": 6,
+    "checkpoints": [
+      "esm2",
+      "protbert",
+      "prott5",
+      "esmc-300m",
+      "esmc-600m",
+      "esm3"
+    ],
+    "lock_sha256": "93945413afa13c15f06872a79d4325d0c5a78894c714a3afb04282675407ebc5",
+    "prott5_restore_recipe_sha256": "37b912f08cf6b8a12dba725123946c14c849528627411ff32ecb1759d88b75bc",
+    "lock_and_recipe_unchanged": true
+  },
+  "profiles": {
+    "default": {
+      "name": "cu121",
+      "python": "3.10.19",
+      "torch": "2.5.1+cu121",
+      "torchvision": "0.20.1+cu121",
+      "cuda": "12.1",
+      "cudnn": 90100,
+      "compose_files": [
+        "docker-compose.yml"
+      ],
+      "requires_nvidia_container_toolkit": true
+    },
+    "cpu": {
+      "name": "cpu",
+      "python": "3.10.19",
+      "torch": "2.5.1+cpu",
+      "torchvision": "0.20.1+cpu",
+      "cuda": null,
+      "cudnn": null,
+      "compose_files": [
+        "docker-compose.yml",
+        "docker-compose.cpu.yml"
+      ],
+      "requests_gpu": false,
+      "bitwise_equivalence_to_paper_gpu_asserted": false
+    }
+  },
+  "source_sha256": {
+    "docker/backend.Dockerfile": "8f46634b2ab47e6afe14db78325865ff6b73d06784cbeeb8c80580175207c261",
+    "docker/check_runtime.py": "846baff0fc763c814e427370262cc801631fb97dcfa5befd8e5eb963c870af96",
+    "docker-compose.yml": "bc22f0e85f1e0c5c085da2594ee0cf8cb5a045b0fa64cb624f2d4093f1203f1f",
+    "docker-compose.cpu.yml": "d024f0232b230423d9b826f78e29d657493c77ca2363bd5708becc5473b768d7",
+    "requirements.txt": "af960a04a9844e8379994c62764045685e5a3eebd86c561e0c13f977c0c9a55c",
+    "requirements-pretrained.txt": "946d553954141e312ab1f72fcc5a800bf8a930ad104f68174c5c4a7c6ccdb367",
+    "docker/download_models.py": "3b6e8777f84364a1072d874a131822a94d2e5afa2eb0299b666738d1fb1e6347",
+    "tools/verify_prott5_equivalence.py": "00f9d55506599917a620f0d0860c0aa227adc891c9ac287b28e2b6381b4df3d9",
+    "tools/verify_prott5_loader_rng.py": "8c3cfeb61039514c8cd4ad34d6292528446e01b34f13546043fb5e7fdffb537e",
+    "tools/verify_prott5_restore.py": "715d7ac20bf0e29149328d1e4b316c6be79c3f044607ab4c1c3424301ec9cadf",
+    "tests/test_paper_runtime.py": "ad7cfc3ce3dfa18963ea4b64ea30ca0fe68f746e84399151522c9669ed8953b7",
+    ".env.example": "062985d7e369ae29925a4ec464c6d73b169dcb0100a4da42957143cf5a8fa23c",
+    "tests/test_docker_models.py": "e12991789e136c42eadb5cf20d06ac9c31d1dcd29e7a0eed9cf11856a490877a"
+  },
+  "checks": {
+    "regression_tests": {
+      "status": "PASS",
+      "results_per_repository": {
+        "PepPlatform_publish": {
+          "passed": 115,
+          "warnings": 2
+        },
+        "PepPlatform": {
+          "passed": 115,
+          "warnings": 2
+        }
+      },
+      "test_files": [
+        "tests/test_paper_runtime.py",
+        "tests/test_docker_models.py",
+        "tests/test_prott5_restore.py",
+        "tests/test_prott5_equivalence.py",
+        "tests/test_prott5.py",
+        "tests/test_pretrained_model_sources.py"
+      ],
+      "interpreter": "Original frozen Python 3.10.19 environment",
+      "warnings": "Two existing Swig deprecation warnings per repository.",
+      "transport_coverage": [
+        "Default setup stays lazy",
+        "TLS 1.2 retains certificate and hostname verification for direct/proxy connections",
+        "Invalid compatibility mode fails before download"
+      ],
+      "artifact": "tls-regression-tests.json"
+    },
+    "compose_profiles": {
+      "status": "PASS",
+      "implementation": "Real Docker Compose v2.35.1 config rendering, asserted by tests/test_paper_runtime.py",
+      "default_requests_gpu": true,
+      "cpu_clears_gpu_requests": true,
+      "model_storage_and_cache_unchanged": true
+    },
+    "original_frozen_host_runtime": {
+      "status": "PASS",
+      "scope": "Original frozen host environment; CUDA libraries checked, CPU arithmetic only. Not a new Docker image or GPU execution check.",
+      "python": "3.10.19",
+      "packages": {
+        "joblib": "1.5.3",
+        "gensim": "4.4.0",
+        "numpy": "2.2.6",
+        "scipy": "1.15.3",
+        "scikit-learn": "1.7.2",
+        "xgboost": "3.1.3",
+        "lightgbm": "4.6.0",
+        "tqdm": "4.67.1",
+        "transformers": "4.48.1",
+        "tokenizers": "0.21.4",
+        "esm": "3.2.0",
+        "sentencepiece": "0.2.1",
+        "huggingface-hub": "0.36.0",
+        "safetensors": "0.7.0",
+        "torch": "2.5.1+cu121",
+        "torchvision": "0.20.1+cu121"
+      },
+      "cuda_runtime_version": "12.1",
+      "cudnn_version": 90100,
+      "requested_device": "cpu",
+      "device_usable": true,
+      "mismatches": {},
+      "artifact": "host-runtime-result.json"
+    },
+    "prott5_cpu_restoration_comparison": {
+      "status": "PASS",
+      "device": "cpu",
+      "scope": "New formal image; original paper shards versus this run's cold-downloaded and restored files.",
+      "files_match_lock": true,
+      "verified_file_count": 13,
+      "rng_equal": true,
+      "classifier_initialization_equal": true,
+      "synthetic_training_equal": true,
+      "synthetic_steps": 3,
+      "synthetic_losses": {
+        "original": [
+          0.6838986277580261,
+          0.5943281054496765,
+          0.49796316027641296
+        ],
+        "restored": [
+          0.6838986277580261,
+          0.5943281054496765,
+          0.49796316027641296
+        ]
+      },
+      "outputs_equal": true,
+      "probe_count": 9,
+      "sequence_count": 63,
+      "full_report": {
+        "status": "PASS",
+        "created_at": "2026-11-06T11:17:58.022525+00:00",
+        "scope": "Exact restoration, offline loading, RNG, features and three synthetic CNN steps",
+        "official_directory": "/var/lib/pepplatform/huggingface/hub/models--Rostlab--prot_t5_xl_uniref50/snapshots/973be27c52ee6474de9c945952a8008aeb2a1a73",
+        "original_directory": "/disk2/home/qts/code/PepPlatform/models/prott5",
+        "restored_directory": "/var/lib/pepplatform/pretrained/.versions/prott5/paper/c1e7b7328276917e729bf11585ac6b4b7965aa33251edc882ee2fad7d47d307d",
+        "rerun_command": "/usr/local/bin/python /app/tools/verify_prott5_restore.py --official /var/lib/pepplatform/huggingface/hub/models--Rostlab--prot_t5_xl_uniref50/snapshots/973be27c52ee6474de9c945952a8008aeb2a1a73 --sharded /disk2/home/qts/code/PepPlatform/models/prott5 --restored /var/lib/pepplatform/pretrained/.versions/prott5/paper/c1e7b7328276917e729bf11585ac6b4b7965aa33251edc882ee2fad7d47d307d --reference /disk2/home/qts/code/PepPlatform/experiment_paper/current_results.json --output /verification/prott5-cpu-rerun --threads 4 --device cpu",
+        "source_files": {
+          "tools/verify_prott5_restore.py": "715d7ac20bf0e29149328d1e4b316c6be79c3f044607ab4c1c3424301ec9cadf",
+          "tools/verify_prott5_equivalence.py": "00f9d55506599917a620f0d0860c0aa227adc891c9ac287b28e2b6381b4df3d9",
+          "tools/verify_prott5_loader_rng.py": "8c3cfeb61039514c8cd4ad34d6292528446e01b34f13546043fb5e7fdffb537e",
+          "docker/download_models.py": "3b6e8777f84364a1072d874a131822a94d2e5afa2eb0299b666738d1fb1e6347",
+          "docker/prott5.restore.json": "37b912f08cf6b8a12dba725123946c14c849528627411ff32ecb1759d88b75bc",
+          "docker/models.lock.json": "93945413afa13c15f06872a79d4325d0c5a78894c714a3afb04282675407ebc5",
+          "pepplatform/encoders.py": "73d21f9787e5fe05b9c90c522931d6b3e4205330adf03cafba67a00794567178",
+          "pepplatform/tokenizers.py": "a203078ca3fb48819b270adef6c33c1d078f2fa8454fae5c58c0c5450c8ea3bc",
+          "pepplatform/prott5.py": "f87e6ec522b7e3c91fca013fda9d4a7948a1f10c298d42f59b4eb4a5c2605c0b",
+          "pepplatform/models.py": "89207ded8bc479ca22adaeb8da67af77cb74b8e8d5545527c99daa75a9c5a505",
+          "pepplatform/workflow.py": "116bb50e2d28067d6620195295d4ea7064068bbd1912e90703f29855523ca5cd",
+          "pepplatform/cache_provenance.py": "cd774ad902fde5e1cefdf1056406102aecd8715c8cae2ec467b0d259d5362bd4"
+        },
+        "environment": {
+          "torch": "2.5.1+cpu",
+          "transformers": "4.48.1",
+          "tokenizers": "0.21.4",
+          "sentencepiece": "0.2.1",
+          "safetensors": "0.7.0"
+        },
+        "files_match_lock": true,
+        "reference": {
+          "results_id": "function_policy_completion_20261022T0620Z_aupr_trapezoidal_v2",
+          "registration_sha256": "eb16353b3aa8a7441c18f2e53a8c039c5f2e45d91649227b346825266c82e8fd",
+          "results_index_sha256": "0e7bdb65a95ce26bb186a5efe1cff740a52bacb9e92c28734ed08c0ca8c6c71c",
+          "protocol_sha256": "d92d5d831cff8873eccf02a567fd5c7f7db55c08e11af6d886cb2388c1628be3",
+          "cohort_sha256": "778c71578722bddd3d254fbf1363a1abf74d2e624ccf36d2aec962b376fa5f35",
+          "candidate_count": 100,
+          "counts": {
+            "pep_function": 35,
+            "pep_hlaii": 20,
+            "pep_mhci": 20,
+            "pep_protein_interaction": 25
+          }
+        },
+        "official_revision": "973be27c52ee6474de9c945952a8008aeb2a1a73",
+        "official_sha256": "c06141d42e93c12b5f6d95c701952156bd4079661f5f2d981d0d2036ba96dae9",
+        "recipe_sha256": "37b912f08cf6b8a12dba725123946c14c849528627411ff32ecb1759d88b75bc",
+        "lock_sha256": "93945413afa13c15f06872a79d4325d0c5a78894c714a3afb04282675407ebc5",
+        "weight_sha256": "c1e7b7328276917e729bf11585ac6b4b7965aa33251edc882ee2fad7d47d307d",
+        "model_fingerprint": "tree:28c687dd642fd72bec8209c50ecf643368651246d4c7296e350aa75d04f32e5e",
+        "verified_files": {
+          ".gitattributes": {
+            "size_bytes": 690,
+            "sha256": "98cf30ae2568ea1d18641cc0d1d9a2f9041cc43aea81f5d719654abd9e290e0d"
+          },
+          "README.md": {
+            "size_bytes": 7648,
+            "sha256": "d12aa256233754050384dd196f84fa3509bc540e4ee180e8d230f1d59a7786c3"
+          },
+          "config.json": {
+            "size_bytes": 707,
+            "sha256": "296e51c406d64d7848e6ee2d66d449f2315f54227699a9066d355dad1b2a969e"
+          },
+          "model-00001-of-00006.safetensors": {
+            "size_bytes": 1946772976,
+            "sha256": "302b5fd0e997b9fda9da846af92527e3f41da90defebf558e9cafc16b09334ea"
+          },
+          "model-00002-of-00006.safetensors": {
+            "size_bytes": 1946248656,
+            "sha256": "8ff20419580de3605bced48ef64888f185a1a0ab7315e5221327e56412680452"
+          },
+          "model-00003-of-00006.safetensors": {
+            "size_bytes": 1946257792,
+            "sha256": "5ee927fd162303f86a28d66ab07983a61c4b2378dfa106585ccc44b05ded19a3"
+          },
+          "model-00004-of-00006.safetensors": {
+            "size_bytes": 1996590544,
+            "sha256": "fa08cec6c81dc0ca3da632d416db20bb6b3a983bd8360177d1c588e29421c70b"
+          },
+          "model-00005-of-00006.safetensors": {
+            "size_bytes": 1963040536,
+            "sha256": "0f0b84e8c43b9aa2867b61e586327dd70d1e24c0517c01c1f11e04ce3f758c60"
+          },
+          "model-00006-of-00006.safetensors": {
+            "size_bytes": 1476473104,
+            "sha256": "da153b54dea8b379d9ae68043d26e6bc999cef817a52e905a5ebe0ed237d2774"
+          },
+          "model.safetensors.index.json": {
+            "size_bytes": 45981,
+            "sha256": "c7597b01c5a03e2b10db89d31de7745d4ea86997e011cf746136d62945ab1295"
+          },
+          "special_tokens_map.json": {
+            "size_bytes": 1786,
+            "sha256": "4720c0fddbe4c5991334f85ad7073d9bd0a294a8ba4641a2f8dab614ca825949"
+          },
+          "spiece.model": {
+            "size_bytes": 237990,
+            "sha256": "74da7b4afcde53faa570114b530c726135bdfcdb813dec3abfb27f9d44db7324"
+          },
+          "tokenizer_config.json": {
+            "size_bytes": 24,
+            "sha256": "a5064475340d80a560463f49921407d901eef3e89667a931eb81a186633eff4b"
+          }
+        },
+        "case_manifest_sha256": "ee41988869fc70e5aaa43248f612265d4c5cd60ce7f86c4733901183a65940c0",
+        "classifier_probe": {
+          "candidate": "c001_prott5_residue_cnn_mlp",
+          "metadata_sha256": "05bf1b350ac1ed1f3b38d1cbeec7882ce3bb8021600813f5511adaf69a8be0c7",
+          "constructor_arguments": {
+            "architecture": "cnn",
+            "input_dim": 1024,
+            "adapter_dim": 128,
+            "max_length": 128,
+            "num_classes": 15,
+            "dropout": 0.2,
+            "head_hidden_dims": [
+              128
+            ],
+            "head_activation": "relu",
+            "head_dropout": 0.2
+          },
+          "synthetic_training": {
+            "steps": 3,
+            "optimizer": "AdamW",
+            "lr": 0.001,
+            "weight_decay": 0
+          }
+        },
+        "execution": {
+          "device": "cpu",
+          "threads": 4,
+          "seed": 42,
+          "cuda_runtime_version": null,
+          "cudnn_version": null
+        },
+        "identity_validation_passed": true,
+        "loaded_encoder_state_equal": true,
+        "loader_class_equal": true,
+        "rng_equal": true,
+        "classifier_initialization_equal": true,
+        "synthetic_training_equal": true,
+        "synthetic_losses": {
+          "original": [
+            0.6838986277580261,
+            0.5943281054496765,
+            0.49796316027641296
+          ],
+          "restored": [
+            0.6838986277580261,
+            0.5943281054496765,
+            0.49796316027641296
+          ]
+        },
+        "rng_states": {
+          "original": {
+            "before_loading": {
+              "python": "21feb557e3da2a52be59d0a03105f7314322a903b4cca49a0e125c43cf2885d0",
+              "numpy": "a7f5f1d23152cfb723e961fc900954baa7f903054a4fa500eebefb5d5aff780b",
+              "torch_cpu": "5feb54a46230d321d888e9b43cf5a57492665f199e4377408d79ee460e36679c"
+            },
+            "after_loading": {
+              "python": "21feb557e3da2a52be59d0a03105f7314322a903b4cca49a0e125c43cf2885d0",
+              "numpy": "a7f5f1d23152cfb723e961fc900954baa7f903054a4fa500eebefb5d5aff780b",
+              "torch_cpu": "61f867dde8a9b0baed999084c52e6548cd37a7c4ed86e20a86ae3dfc030e2cab"
+            },
+            "after_features": {
+              "python": "21feb557e3da2a52be59d0a03105f7314322a903b4cca49a0e125c43cf2885d0",
+              "numpy": "a7f5f1d23152cfb723e961fc900954baa7f903054a4fa500eebefb5d5aff780b",
+              "torch_cpu": "61f867dde8a9b0baed999084c52e6548cd37a7c4ed86e20a86ae3dfc030e2cab"
+            },
+            "after_classifier_initialization": {
+              "python": "21feb557e3da2a52be59d0a03105f7314322a903b4cca49a0e125c43cf2885d0",
+              "numpy": "a7f5f1d23152cfb723e961fc900954baa7f903054a4fa500eebefb5d5aff780b",
+              "torch_cpu": "ba1213e2ab7c2abb94044ab60dc0b2a8b14d1191939a28fcbdb1bfc1ccd5616c"
+            },
+            "after_synthetic_training": {
+              "python": "21feb557e3da2a52be59d0a03105f7314322a903b4cca49a0e125c43cf2885d0",
+              "numpy": "a7f5f1d23152cfb723e961fc900954baa7f903054a4fa500eebefb5d5aff780b",
+              "torch_cpu": "cfaa6379cdeff3ddef284f78989c3991205091f4c5533106f27e3f851530306a"
+            }
+          },
+          "restored": {
+            "before_loading": {
+              "python": "21feb557e3da2a52be59d0a03105f7314322a903b4cca49a0e125c43cf2885d0",
+              "numpy": "a7f5f1d23152cfb723e961fc900954baa7f903054a4fa500eebefb5d5aff780b",
+              "torch_cpu": "5feb54a46230d321d888e9b43cf5a57492665f199e4377408d79ee460e36679c"
+            },
+            "after_loading": {
+              "python": "21feb557e3da2a52be59d0a03105f7314322a903b4cca49a0e125c43cf2885d0",
+              "numpy": "a7f5f1d23152cfb723e961fc900954baa7f903054a4fa500eebefb5d5aff780b",
+              "torch_cpu": "61f867dde8a9b0baed999084c52e6548cd37a7c4ed86e20a86ae3dfc030e2cab"
+            },
+            "after_features": {
+              "python": "21feb557e3da2a52be59d0a03105f7314322a903b4cca49a0e125c43cf2885d0",
+              "numpy": "a7f5f1d23152cfb723e961fc900954baa7f903054a4fa500eebefb5d5aff780b",
+              "torch_cpu": "61f867dde8a9b0baed999084c52e6548cd37a7c4ed86e20a86ae3dfc030e2cab"
+            },
+            "after_classifier_initialization": {
+              "python": "21feb557e3da2a52be59d0a03105f7314322a903b4cca49a0e125c43cf2885d0",
+              "numpy": "a7f5f1d23152cfb723e961fc900954baa7f903054a4fa500eebefb5d5aff780b",
+              "torch_cpu": "ba1213e2ab7c2abb94044ab60dc0b2a8b14d1191939a28fcbdb1bfc1ccd5616c"
+            },
+            "after_synthetic_training": {
+              "python": "21feb557e3da2a52be59d0a03105f7314322a903b4cca49a0e125c43cf2885d0",
+              "numpy": "a7f5f1d23152cfb723e961fc900954baa7f903054a4fa500eebefb5d5aff780b",
+              "torch_cpu": "cfaa6379cdeff3ddef284f78989c3991205091f4c5533106f27e3f851530306a"
+            }
+          }
+        },
+        "output_cases": [
+          {
+            "name": "pep_function.sequence",
+            "sample_count": 8,
+            "bitwise_equal": true,
+            "fields": {
+              "tokens.input_ids": {
+                "left_shape": [
+                  8,
+                  39
+                ],
+                "right_shape": [
+                  8,
+                  39
+                ],
+                "left_dtype": "torch.int64",
+                "right_dtype": "torch.int64",
+                "left_sha256": "00b74495174386dab9db6b49b043d05a278cebbec0002c86d58323cf95388665",
+                "right_sha256": "00b74495174386dab9db6b49b043d05a278cebbec0002c86d58323cf95388665",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              },
+              "tokens.special_tokens_mask": {
+                "left_shape": [
+                  8,
+                  39
+                ],
+                "right_shape": [
+                  8,
+                  39
+                ],
+                "left_dtype": "torch.int64",
+                "right_dtype": "torch.int64",
+                "left_sha256": "6bfb63f2225bb0d010e0fad0bc2fa79f3ac1da95e4539564aacfd8ace819bc6c",
+                "right_sha256": "6bfb63f2225bb0d010e0fad0bc2fa79f3ac1da95e4539564aacfd8ace819bc6c",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              },
+              "tokens.attention_mask": {
+                "left_shape": [
+                  8,
+                  39
+                ],
+                "right_shape": [
+                  8,
+                  39
+                ],
+                "left_dtype": "torch.int64",
+                "right_dtype": "torch.int64",
+                "left_sha256": "2e3ef9107fafddd19c4664796065a9b920908fb6b76518bf8c532e1fe484708a",
+                "right_sha256": "2e3ef9107fafddd19c4664796065a9b920908fb6b76518bf8c532e1fe484708a",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              },
+              "pooled": {
+                "left_shape": [
+                  8,
+                  1024
+                ],
+                "right_shape": [
+                  8,
+                  1024
+                ],
+                "left_dtype": "torch.float32",
+                "right_dtype": "torch.float32",
+                "left_sha256": "e8e5300b60e74314450ab91e4d46459f21b163f354ec654678b5f88648b47b9f",
+                "right_sha256": "e8e5300b60e74314450ab91e4d46459f21b163f354ec654678b5f88648b47b9f",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              },
+              "residue": {
+                "left_shape": [
+                  8,
+                  128,
+                  1024
+                ],
+                "right_shape": [
+                  8,
+                  128,
+                  1024
+                ],
+                "left_dtype": "torch.float16",
+                "right_dtype": "torch.float16",
+                "left_sha256": "8e08b48288a8b3251c7d1bb56f47cc5acf4783148178653b19a1e6f8fd2c5c78",
+                "right_sha256": "8e08b48288a8b3251c7d1bb56f47cc5acf4783148178653b19a1e6f8fd2c5c78",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              },
+              "residue_mask": {
+                "left_shape": [
+                  8,
+                  128
+                ],
+                "right_shape": [
+                  8,
+                  128
+                ],
+                "left_dtype": "torch.bool",
+                "right_dtype": "torch.bool",
+                "left_sha256": "514b8f480b968909123ce994ffb53f42a8f96da1ad425ff76a0c4fcd3a1e15f9",
+                "right_sha256": "514b8f480b968909123ce994ffb53f42a8f96da1ad425ff76a0c4fcd3a1e15f9",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              },
+              "hidden_fp32": {
+                "left_shape": [
+                  8,
+                  39,
+                  1024
+                ],
+                "right_shape": [
+                  8,
+                  39,
+                  1024
+                ],
+                "left_dtype": "torch.float32",
+                "right_dtype": "torch.float32",
+                "left_sha256": "d2772a162a3aee6c1c69200007511a7a1212a033494d1d7eacd9ac3223df5035",
+                "right_sha256": "d2772a162a3aee6c1c69200007511a7a1212a033494d1d7eacd9ac3223df5035",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              }
+            }
+          },
+          {
+            "name": "pep_protein_interaction.peptide",
+            "sample_count": 8,
+            "bitwise_equal": true,
+            "fields": {
+              "tokens.input_ids": {
+                "left_shape": [
+                  8,
+                  40
+                ],
+                "right_shape": [
+                  8,
+                  40
+                ],
+                "left_dtype": "torch.int64",
+                "right_dtype": "torch.int64",
+                "left_sha256": "474ca24e2aa5d168f3a17bc5e624421cd559abbfe20516c369778c0d79e1bc28",
+                "right_sha256": "474ca24e2aa5d168f3a17bc5e624421cd559abbfe20516c369778c0d79e1bc28",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              },
+              "tokens.special_tokens_mask": {
+                "left_shape": [
+                  8,
+                  40
+                ],
+                "right_shape": [
+                  8,
+                  40
+                ],
+                "left_dtype": "torch.int64",
+                "right_dtype": "torch.int64",
+                "left_sha256": "dc76966848be7b62dc3021e760e4af46b8dfb38920d5ffdb45b5a96f77d8d9de",
+                "right_sha256": "dc76966848be7b62dc3021e760e4af46b8dfb38920d5ffdb45b5a96f77d8d9de",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              },
+              "tokens.attention_mask": {
+                "left_shape": [
+                  8,
+                  40
+                ],
+                "right_shape": [
+                  8,
+                  40
+                ],
+                "left_dtype": "torch.int64",
+                "right_dtype": "torch.int64",
+                "left_sha256": "7c47223dc8f31e442c5332a7ea81febc7fd878c9a5ae70b28f8690f492b8360e",
+                "right_sha256": "7c47223dc8f31e442c5332a7ea81febc7fd878c9a5ae70b28f8690f492b8360e",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              },
+              "pooled": {
+                "left_shape": [
+                  8,
+                  1024
+                ],
+                "right_shape": [
+                  8,
+                  1024
+                ],
+                "left_dtype": "torch.float32",
+                "right_dtype": "torch.float32",
+                "left_sha256": "eb686d8f429e1b3567c518f77f4500314b3b74a7078b20c1af790659b7a29ad8",
+                "right_sha256": "eb686d8f429e1b3567c518f77f4500314b3b74a7078b20c1af790659b7a29ad8",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              },
+              "residue": {
+                "left_shape": [
+                  8,
+                  511,
+                  1024
+                ],
+                "right_shape": [
+                  8,
+                  511,
+                  1024
+                ],
+                "left_dtype": "torch.float16",
+                "right_dtype": "torch.float16",
+                "left_sha256": "60809d74c276a55080bfcb3b2880ae153842be2765b983bec223b6ede4ff0906",
+                "right_sha256": "60809d74c276a55080bfcb3b2880ae153842be2765b983bec223b6ede4ff0906",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              },
+              "residue_mask": {
+                "left_shape": [
+                  8,
+                  511
+                ],
+                "right_shape": [
+                  8,
+                  511
+                ],
+                "left_dtype": "torch.bool",
+                "right_dtype": "torch.bool",
+                "left_sha256": "2f2855ad5f48a72622e84bce853ad980cbfe8f674cbb414f4e1f45651b0892bd",
+                "right_sha256": "2f2855ad5f48a72622e84bce853ad980cbfe8f674cbb414f4e1f45651b0892bd",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              },
+              "hidden_fp32": {
+                "left_shape": [
+                  8,
+                  40,
+                  1024
+                ],
+                "right_shape": [
+                  8,
+                  40,
+                  1024
+                ],
+                "left_dtype": "torch.float32",
+                "right_dtype": "torch.float32",
+                "left_sha256": "dc0ba758ac911b11c8deb248bc5515f3fac8907a24ef120889439fd27132a5cb",
+                "right_sha256": "dc0ba758ac911b11c8deb248bc5515f3fac8907a24ef120889439fd27132a5cb",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              }
+            }
+          },
+          {
+            "name": "pep_protein_interaction.partner",
+            "sample_count": 8,
+            "bitwise_equal": true,
+            "fields": {
+              "tokens.input_ids": {
+                "left_shape": [
+                  8,
+                  340
+                ],
+                "right_shape": [
+                  8,
+                  340
+                ],
+                "left_dtype": "torch.int64",
+                "right_dtype": "torch.int64",
+                "left_sha256": "c9253df7f17dc5b0f70e5608c5c01f1b1b41b59f5b52c2df7a686de788172bbb",
+                "right_sha256": "c9253df7f17dc5b0f70e5608c5c01f1b1b41b59f5b52c2df7a686de788172bbb",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              },
+              "tokens.special_tokens_mask": {
+                "left_shape": [
+                  8,
+                  340
+                ],
+                "right_shape": [
+                  8,
+                  340
+                ],
+                "left_dtype": "torch.int64",
+                "right_dtype": "torch.int64",
+                "left_sha256": "7a7058f4352944ad668432712fe4e203ce522f6d7424f269dda73efb065597e9",
+                "right_sha256": "7a7058f4352944ad668432712fe4e203ce522f6d7424f269dda73efb065597e9",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              },
+              "tokens.attention_mask": {
+                "left_shape": [
+                  8,
+                  340
+                ],
+                "right_shape": [
+                  8,
+                  340
+                ],
+                "left_dtype": "torch.int64",
+                "right_dtype": "torch.int64",
+                "left_sha256": "ba4448142bf005788012e5b6f88cf94364b7b4f8071df3f9a087f9dc299ab608",
+                "right_sha256": "ba4448142bf005788012e5b6f88cf94364b7b4f8071df3f9a087f9dc299ab608",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              },
+              "pooled": {
+                "left_shape": [
+                  8,
+                  1024
+                ],
+                "right_shape": [
+                  8,
+                  1024
+                ],
+                "left_dtype": "torch.float32",
+                "right_dtype": "torch.float32",
+                "left_sha256": "8c042ec013ad434a92f8621ef132a3cd163e7dfded30a1400e2565f417566637",
+                "right_sha256": "8c042ec013ad434a92f8621ef132a3cd163e7dfded30a1400e2565f417566637",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              },
+              "residue": {
+                "left_shape": [
+                  8,
+                  511,
+                  1024
+                ],
+                "right_shape": [
+                  8,
+                  511,
+                  1024
+                ],
+                "left_dtype": "torch.float16",
+                "right_dtype": "torch.float16",
+                "left_sha256": "e538f8a2259c7dd29f3eb29feea86284f688ed385d5fc47b1fefe788c3834fb7",
+                "right_sha256": "e538f8a2259c7dd29f3eb29feea86284f688ed385d5fc47b1fefe788c3834fb7",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              },
+              "residue_mask": {
+                "left_shape": [
+                  8,
+                  511
+                ],
+                "right_shape": [
+                  8,
+                  511
+                ],
+                "left_dtype": "torch.bool",
+                "right_dtype": "torch.bool",
+                "left_sha256": "76431d365ad54e3d8ebed2bc172f7bc0047b342e735334165b39772f54fed0ab",
+                "right_sha256": "76431d365ad54e3d8ebed2bc172f7bc0047b342e735334165b39772f54fed0ab",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              },
+              "hidden_fp32": {
+                "left_shape": [
+                  8,
+                  340,
+                  1024
+                ],
+                "right_shape": [
+                  8,
+                  340,
+                  1024
+                ],
+                "left_dtype": "torch.float32",
+                "right_dtype": "torch.float32",
+                "left_sha256": "c179decd6d04c12a2379b5c4e57ace7d75650c429c3764df50624ae948836164",
+                "right_sha256": "c179decd6d04c12a2379b5c4e57ace7d75650c429c3764df50624ae948836164",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              }
+            }
+          },
+          {
+            "name": "pep_mhci.peptide",
+            "sample_count": 8,
+            "bitwise_equal": true,
+            "fields": {
+              "tokens.input_ids": {
+                "left_shape": [
+                  8,
+                  12
+                ],
+                "right_shape": [
+                  8,
+                  12
+                ],
+                "left_dtype": "torch.int64",
+                "right_dtype": "torch.int64",
+                "left_sha256": "4eaae6818c8ab090c88c19659ae51bb42d50e2623f8349eaf4b0250cb3233734",
+                "right_sha256": "4eaae6818c8ab090c88c19659ae51bb42d50e2623f8349eaf4b0250cb3233734",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              },
+              "tokens.special_tokens_mask": {
+                "left_shape": [
+                  8,
+                  12
+                ],
+                "right_shape": [
+                  8,
+                  12
+                ],
+                "left_dtype": "torch.int64",
+                "right_dtype": "torch.int64",
+                "left_sha256": "29b5b70150246d0bb9ff69bddbe2c8323aa0dcba308e12d8828eb3c724fa8c3e",
+                "right_sha256": "29b5b70150246d0bb9ff69bddbe2c8323aa0dcba308e12d8828eb3c724fa8c3e",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              },
+              "tokens.attention_mask": {
+                "left_shape": [
+                  8,
+                  12
+                ],
+                "right_shape": [
+                  8,
+                  12
+                ],
+                "left_dtype": "torch.int64",
+                "right_dtype": "torch.int64",
+                "left_sha256": "cdf2927d338c943ee7a0b84bab5aae8066afc2e39289cb4c5c43d3ff386273a2",
+                "right_sha256": "cdf2927d338c943ee7a0b84bab5aae8066afc2e39289cb4c5c43d3ff386273a2",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              },
+              "pooled": {
+                "left_shape": [
+                  8,
+                  1024
+                ],
+                "right_shape": [
+                  8,
+                  1024
+                ],
+                "left_dtype": "torch.float32",
+                "right_dtype": "torch.float32",
+                "left_sha256": "3ea65f5ae1a63abedb0cd4047ccca884bcbb99c0f1cff771753eda86305b3ec1",
+                "right_sha256": "3ea65f5ae1a63abedb0cd4047ccca884bcbb99c0f1cff771753eda86305b3ec1",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              },
+              "residue": {
+                "left_shape": [
+                  8,
+                  48,
+                  1024
+                ],
+                "right_shape": [
+                  8,
+                  48,
+                  1024
+                ],
+                "left_dtype": "torch.float16",
+                "right_dtype": "torch.float16",
+                "left_sha256": "6c9c1c00b12446ef207f30d1efd64d8984a039fbba1d336ee8b24df126de316c",
+                "right_sha256": "6c9c1c00b12446ef207f30d1efd64d8984a039fbba1d336ee8b24df126de316c",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              },
+              "residue_mask": {
+                "left_shape": [
+                  8,
+                  48
+                ],
+                "right_shape": [
+                  8,
+                  48
+                ],
+                "left_dtype": "torch.bool",
+                "right_dtype": "torch.bool",
+                "left_sha256": "d56b18991f71a5899e300dafb838c2814ca85ebd18b71e003148678a7019c995",
+                "right_sha256": "d56b18991f71a5899e300dafb838c2814ca85ebd18b71e003148678a7019c995",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              },
+              "hidden_fp32": {
+                "left_shape": [
+                  8,
+                  12,
+                  1024
+                ],
+                "right_shape": [
+                  8,
+                  12,
+                  1024
+                ],
+                "left_dtype": "torch.float32",
+                "right_dtype": "torch.float32",
+                "left_sha256": "9475ffa37e05438d9ba89c72d22dd51530d0c643549b356f1616e9b99b703246",
+                "right_sha256": "9475ffa37e05438d9ba89c72d22dd51530d0c643549b356f1616e9b99b703246",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              }
+            }
+          },
+          {
+            "name": "pep_mhci.partner",
+            "sample_count": 8,
+            "bitwise_equal": true,
+            "fields": {
+              "tokens.input_ids": {
+                "left_shape": [
+                  8,
+                  31
+                ],
+                "right_shape": [
+                  8,
+                  31
+                ],
+                "left_dtype": "torch.int64",
+                "right_dtype": "torch.int64",
+                "left_sha256": "8cdd88f912b3362e73bd022c20d5e97c1a720025e3e87a6314737a83779cc354",
+                "right_sha256": "8cdd88f912b3362e73bd022c20d5e97c1a720025e3e87a6314737a83779cc354",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              },
+              "tokens.special_tokens_mask": {
+                "left_shape": [
+                  8,
+                  31
+                ],
+                "right_shape": [
+                  8,
+                  31
+                ],
+                "left_dtype": "torch.int64",
+                "right_dtype": "torch.int64",
+                "left_sha256": "2cbeab26313d7473001164335c13c8b0fad7c3b4915cf3f2b138bd1aee18f2f1",
+                "right_sha256": "2cbeab26313d7473001164335c13c8b0fad7c3b4915cf3f2b138bd1aee18f2f1",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              },
+              "tokens.attention_mask": {
+                "left_shape": [
+                  8,
+                  31
+                ],
+                "right_shape": [
+                  8,
+                  31
+                ],
+                "left_dtype": "torch.int64",
+                "right_dtype": "torch.int64",
+                "left_sha256": "4037adf099b2d2a8b45398303d2983d70cd5d09b13192bab507d1baaef3de9d8",
+                "right_sha256": "4037adf099b2d2a8b45398303d2983d70cd5d09b13192bab507d1baaef3de9d8",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              },
+              "pooled": {
+                "left_shape": [
+                  8,
+                  1024
+                ],
+                "right_shape": [
+                  8,
+                  1024
+                ],
+                "left_dtype": "torch.float32",
+                "right_dtype": "torch.float32",
+                "left_sha256": "a106a29c678797b770cb8a07deafa108b19c677f260cffcb26e8fb02d037b01c",
+                "right_sha256": "a106a29c678797b770cb8a07deafa108b19c677f260cffcb26e8fb02d037b01c",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              },
+              "residue": {
+                "left_shape": [
+                  8,
+                  48,
+                  1024
+                ],
+                "right_shape": [
+                  8,
+                  48,
+                  1024
+                ],
+                "left_dtype": "torch.float16",
+                "right_dtype": "torch.float16",
+                "left_sha256": "39371b9de7b924898c30efd0f6da723f91ca974d2b999167c8694fc16e901c0e",
+                "right_sha256": "39371b9de7b924898c30efd0f6da723f91ca974d2b999167c8694fc16e901c0e",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              },
+              "residue_mask": {
+                "left_shape": [
+                  8,
+                  48
+                ],
+                "right_shape": [
+                  8,
+                  48
+                ],
+                "left_dtype": "torch.bool",
+                "right_dtype": "torch.bool",
+                "left_sha256": "76d69d32bc67581f9bb83dd09f5c803ec88955a9782b2e4cda82a3d19f66803f",
+                "right_sha256": "76d69d32bc67581f9bb83dd09f5c803ec88955a9782b2e4cda82a3d19f66803f",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              },
+              "hidden_fp32": {
+                "left_shape": [
+                  8,
+                  31,
+                  1024
+                ],
+                "right_shape": [
+                  8,
+                  31,
+                  1024
+                ],
+                "left_dtype": "torch.float32",
+                "right_dtype": "torch.float32",
+                "left_sha256": "84c6f602344f9b99f6ebbfa4cab35ef4577a7036b9384ad81655e7ec1711d5e5",
+                "right_sha256": "84c6f602344f9b99f6ebbfa4cab35ef4577a7036b9384ad81655e7ec1711d5e5",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              }
+            }
+          },
+          {
+            "name": "pep_hlaii.peptide",
+            "sample_count": 8,
+            "bitwise_equal": true,
+            "fields": {
+              "tokens.input_ids": {
+                "left_shape": [
+                  8,
+                  17
+                ],
+                "right_shape": [
+                  8,
+                  17
+                ],
+                "left_dtype": "torch.int64",
+                "right_dtype": "torch.int64",
+                "left_sha256": "5d1c5bc79833b917b9a2d99eec83d310ac0616880103e7493977dd638629b0a4",
+                "right_sha256": "5d1c5bc79833b917b9a2d99eec83d310ac0616880103e7493977dd638629b0a4",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              },
+              "tokens.special_tokens_mask": {
+                "left_shape": [
+                  8,
+                  17
+                ],
+                "right_shape": [
+                  8,
+                  17
+                ],
+                "left_dtype": "torch.int64",
+                "right_dtype": "torch.int64",
+                "left_sha256": "73b727c51b821fece3d46b3e476fe85388a1972212b9c8f7de3c70aa971df034",
+                "right_sha256": "73b727c51b821fece3d46b3e476fe85388a1972212b9c8f7de3c70aa971df034",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              },
+              "tokens.attention_mask": {
+                "left_shape": [
+                  8,
+                  17
+                ],
+                "right_shape": [
+                  8,
+                  17
+                ],
+                "left_dtype": "torch.int64",
+                "right_dtype": "torch.int64",
+                "left_sha256": "0c750e3e0c8b2f17042c3d79fc70dfc516b400296906309c9d45032df4bd4e54",
+                "right_sha256": "0c750e3e0c8b2f17042c3d79fc70dfc516b400296906309c9d45032df4bd4e54",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              },
+              "pooled": {
+                "left_shape": [
+                  8,
+                  1024
+                ],
+                "right_shape": [
+                  8,
+                  1024
+                ],
+                "left_dtype": "torch.float32",
+                "right_dtype": "torch.float32",
+                "left_sha256": "893d1c59c6039aed535eb2aaa7de6c87bc96e850ef9ebfc4f75c00c1222dacd4",
+                "right_sha256": "893d1c59c6039aed535eb2aaa7de6c87bc96e850ef9ebfc4f75c00c1222dacd4",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              },
+              "residue": {
+                "left_shape": [
+                  8,
+                  40,
+                  1024
+                ],
+                "right_shape": [
+                  8,
+                  40,
+                  1024
+                ],
+                "left_dtype": "torch.float16",
+                "right_dtype": "torch.float16",
+                "left_sha256": "09a2d275994137a1b9fe300ee7c7a81bcba5e55b57ccc400427fa05466377953",
+                "right_sha256": "09a2d275994137a1b9fe300ee7c7a81bcba5e55b57ccc400427fa05466377953",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              },
+              "residue_mask": {
+                "left_shape": [
+                  8,
+                  40
+                ],
+                "right_shape": [
+                  8,
+                  40
+                ],
+                "left_dtype": "torch.bool",
+                "right_dtype": "torch.bool",
+                "left_sha256": "cd584dfc3678a8b27a9153270ce7a08f07b24a338574bc4efb08109ca867fa45",
+                "right_sha256": "cd584dfc3678a8b27a9153270ce7a08f07b24a338574bc4efb08109ca867fa45",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              },
+              "hidden_fp32": {
+                "left_shape": [
+                  8,
+                  17,
+                  1024
+                ],
+                "right_shape": [
+                  8,
+                  17,
+                  1024
+                ],
+                "left_dtype": "torch.float32",
+                "right_dtype": "torch.float32",
+                "left_sha256": "6078d1851b225714f18824a7828eaada15403836627b473530f45e2cfa5f3f9a",
+                "right_sha256": "6078d1851b225714f18824a7828eaada15403836627b473530f45e2cfa5f3f9a",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              }
+            }
+          },
+          {
+            "name": "pep_hlaii.partner",
+            "sample_count": 8,
+            "bitwise_equal": true,
+            "fields": {
+              "tokens.input_ids": {
+                "left_shape": [
+                  8,
+                  35
+                ],
+                "right_shape": [
+                  8,
+                  35
+                ],
+                "left_dtype": "torch.int64",
+                "right_dtype": "torch.int64",
+                "left_sha256": "2a860499a3aea4f811ae8d6867883334b4903d4bc09e0a2b2c626826b9cc4f22",
+                "right_sha256": "2a860499a3aea4f811ae8d6867883334b4903d4bc09e0a2b2c626826b9cc4f22",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              },
+              "tokens.special_tokens_mask": {
+                "left_shape": [
+                  8,
+                  35
+                ],
+                "right_shape": [
+                  8,
+                  35
+                ],
+                "left_dtype": "torch.int64",
+                "right_dtype": "torch.int64",
+                "left_sha256": "7b5dcf2b01cd0bd9e04163f1c077dd5d00de0863cc78cf796e511a37318b43d1",
+                "right_sha256": "7b5dcf2b01cd0bd9e04163f1c077dd5d00de0863cc78cf796e511a37318b43d1",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              },
+              "tokens.attention_mask": {
+                "left_shape": [
+                  8,
+                  35
+                ],
+                "right_shape": [
+                  8,
+                  35
+                ],
+                "left_dtype": "torch.int64",
+                "right_dtype": "torch.int64",
+                "left_sha256": "766ff8c654df08cfb08c385f6040981da32887aae180d4162107d0dd44e2643d",
+                "right_sha256": "766ff8c654df08cfb08c385f6040981da32887aae180d4162107d0dd44e2643d",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              },
+              "pooled": {
+                "left_shape": [
+                  8,
+                  1024
+                ],
+                "right_shape": [
+                  8,
+                  1024
+                ],
+                "left_dtype": "torch.float32",
+                "right_dtype": "torch.float32",
+                "left_sha256": "8ce2ef9b6b57e01496d5b49efc41203cd3874b9c3da0bf392ee27b0d4c447fc5",
+                "right_sha256": "8ce2ef9b6b57e01496d5b49efc41203cd3874b9c3da0bf392ee27b0d4c447fc5",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              },
+              "residue": {
+                "left_shape": [
+                  8,
+                  40,
+                  1024
+                ],
+                "right_shape": [
+                  8,
+                  40,
+                  1024
+                ],
+                "left_dtype": "torch.float16",
+                "right_dtype": "torch.float16",
+                "left_sha256": "e4129544475ef78af1ed22ff6c27c88d08d2ca10b5f37625dee7ea2bf2c9c52c",
+                "right_sha256": "e4129544475ef78af1ed22ff6c27c88d08d2ca10b5f37625dee7ea2bf2c9c52c",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              },
+              "residue_mask": {
+                "left_shape": [
+                  8,
+                  40
+                ],
+                "right_shape": [
+                  8,
+                  40
+                ],
+                "left_dtype": "torch.bool",
+                "right_dtype": "torch.bool",
+                "left_sha256": "d01e24aa8641ad0f1f663a9b44cc0cf6758413453365d99cffa078f117bffffa",
+                "right_sha256": "d01e24aa8641ad0f1f663a9b44cc0cf6758413453365d99cffa078f117bffffa",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              },
+              "hidden_fp32": {
+                "left_shape": [
+                  8,
+                  35,
+                  1024
+                ],
+                "right_shape": [
+                  8,
+                  35,
+                  1024
+                ],
+                "left_dtype": "torch.float32",
+                "right_dtype": "torch.float32",
+                "left_sha256": "9613592f284b5bd10690af0702305cb030454a97d205e8131e63053ea9969c62",
+                "right_sha256": "9613592f284b5bd10690af0702305cb030454a97d205e8131e63053ea9969c62",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              }
+            }
+          },
+          {
+            "name": "boundary.normalization_padding_truncation",
+            "sample_count": 5,
+            "bitwise_equal": true,
+            "fields": {
+              "tokens.input_ids": {
+                "left_shape": [
+                  5,
+                  17
+                ],
+                "right_shape": [
+                  5,
+                  17
+                ],
+                "left_dtype": "torch.int64",
+                "right_dtype": "torch.int64",
+                "left_sha256": "232d269cfe441003c67cde08d31a30e29a68899cc0166211eb28756502c8e236",
+                "right_sha256": "232d269cfe441003c67cde08d31a30e29a68899cc0166211eb28756502c8e236",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              },
+              "tokens.special_tokens_mask": {
+                "left_shape": [
+                  5,
+                  17
+                ],
+                "right_shape": [
+                  5,
+                  17
+                ],
+                "left_dtype": "torch.int64",
+                "right_dtype": "torch.int64",
+                "left_sha256": "af2a6c15e24cb922668a5af354d52fca1aadf67cd70292ca770f0948df168e71",
+                "right_sha256": "af2a6c15e24cb922668a5af354d52fca1aadf67cd70292ca770f0948df168e71",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              },
+              "tokens.attention_mask": {
+                "left_shape": [
+                  5,
+                  17
+                ],
+                "right_shape": [
+                  5,
+                  17
+                ],
+                "left_dtype": "torch.int64",
+                "right_dtype": "torch.int64",
+                "left_sha256": "c8e82327de474427e7ccd67b60e48cbbbd57267003cbe4ee79f3c1c977f1e930",
+                "right_sha256": "c8e82327de474427e7ccd67b60e48cbbbd57267003cbe4ee79f3c1c977f1e930",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              },
+              "pooled": {
+                "left_shape": [
+                  5,
+                  1024
+                ],
+                "right_shape": [
+                  5,
+                  1024
+                ],
+                "left_dtype": "torch.float32",
+                "right_dtype": "torch.float32",
+                "left_sha256": "a0e23d662d2dfa5c30a7392ff7177be3b8cfd6ee29b2cf4ede181323c5e44446",
+                "right_sha256": "a0e23d662d2dfa5c30a7392ff7177be3b8cfd6ee29b2cf4ede181323c5e44446",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              },
+              "residue": {
+                "left_shape": [
+                  5,
+                  16,
+                  1024
+                ],
+                "right_shape": [
+                  5,
+                  16,
+                  1024
+                ],
+                "left_dtype": "torch.float16",
+                "right_dtype": "torch.float16",
+                "left_sha256": "ccb820b033d9008488b31ad21e512a71cc09f270debac44b654abd5b1b330a79",
+                "right_sha256": "ccb820b033d9008488b31ad21e512a71cc09f270debac44b654abd5b1b330a79",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              },
+              "residue_mask": {
+                "left_shape": [
+                  5,
+                  16
+                ],
+                "right_shape": [
+                  5,
+                  16
+                ],
+                "left_dtype": "torch.bool",
+                "right_dtype": "torch.bool",
+                "left_sha256": "8720af64aa28a1fd92a53d9972c74dd3f2a56b8d37a81cbd06848bc7b346aefa",
+                "right_sha256": "8720af64aa28a1fd92a53d9972c74dd3f2a56b8d37a81cbd06848bc7b346aefa",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              },
+              "hidden_fp32": {
+                "left_shape": [
+                  5,
+                  17,
+                  1024
+                ],
+                "right_shape": [
+                  5,
+                  17,
+                  1024
+                ],
+                "left_dtype": "torch.float32",
+                "right_dtype": "torch.float32",
+                "left_sha256": "0e8a0c8eef85cc9b3a7172585b13cb630a3991a46900f7bca04408f138bb45b9",
+                "right_sha256": "0e8a0c8eef85cc9b3a7172585b13cb630a3991a46900f7bca04408f138bb45b9",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              }
+            }
+          },
+          {
+            "name": "boundary.max_length_511",
+            "sample_count": 2,
+            "bitwise_equal": true,
+            "fields": {
+              "tokens.input_ids": {
+                "left_shape": [
+                  2,
+                  512
+                ],
+                "right_shape": [
+                  2,
+                  512
+                ],
+                "left_dtype": "torch.int64",
+                "right_dtype": "torch.int64",
+                "left_sha256": "791a2f12fd6ac021b8668f53334b8be7a064a5823f865938f0a9d243eef0a507",
+                "right_sha256": "791a2f12fd6ac021b8668f53334b8be7a064a5823f865938f0a9d243eef0a507",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              },
+              "tokens.special_tokens_mask": {
+                "left_shape": [
+                  2,
+                  512
+                ],
+                "right_shape": [
+                  2,
+                  512
+                ],
+                "left_dtype": "torch.int64",
+                "right_dtype": "torch.int64",
+                "left_sha256": "60b78107e992e36ca9e268f7b145d3d323b417524376e2139469d7f3fa234cab",
+                "right_sha256": "60b78107e992e36ca9e268f7b145d3d323b417524376e2139469d7f3fa234cab",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              },
+              "tokens.attention_mask": {
+                "left_shape": [
+                  2,
+                  512
+                ],
+                "right_shape": [
+                  2,
+                  512
+                ],
+                "left_dtype": "torch.int64",
+                "right_dtype": "torch.int64",
+                "left_sha256": "bbddeafcfd3170bd6f6ce9e912a0dae026d243f2364b3d76791e06e0881c397c",
+                "right_sha256": "bbddeafcfd3170bd6f6ce9e912a0dae026d243f2364b3d76791e06e0881c397c",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              },
+              "pooled": {
+                "left_shape": [
+                  2,
+                  1024
+                ],
+                "right_shape": [
+                  2,
+                  1024
+                ],
+                "left_dtype": "torch.float32",
+                "right_dtype": "torch.float32",
+                "left_sha256": "7d82250651cd1aa9cded0b491d7979c16e7c889e281c15661d8cd87944b37211",
+                "right_sha256": "7d82250651cd1aa9cded0b491d7979c16e7c889e281c15661d8cd87944b37211",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              },
+              "residue": {
+                "left_shape": [
+                  2,
+                  511,
+                  1024
+                ],
+                "right_shape": [
+                  2,
+                  511,
+                  1024
+                ],
+                "left_dtype": "torch.float16",
+                "right_dtype": "torch.float16",
+                "left_sha256": "6778a5f55acec2d1de5c23fd665a847376e144727006de72537eee5e8d04ec2b",
+                "right_sha256": "6778a5f55acec2d1de5c23fd665a847376e144727006de72537eee5e8d04ec2b",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              },
+              "residue_mask": {
+                "left_shape": [
+                  2,
+                  511
+                ],
+                "right_shape": [
+                  2,
+                  511
+                ],
+                "left_dtype": "torch.bool",
+                "right_dtype": "torch.bool",
+                "left_sha256": "4cb772ccf6f29261bc87de0855587f10956bde591f4eb1fc7cf9bf47ccf800a1",
+                "right_sha256": "4cb772ccf6f29261bc87de0855587f10956bde591f4eb1fc7cf9bf47ccf800a1",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              },
+              "hidden_fp32": {
+                "left_shape": [
+                  2,
+                  512,
+                  1024
+                ],
+                "right_shape": [
+                  2,
+                  512,
+                  1024
+                ],
+                "left_dtype": "torch.float32",
+                "right_dtype": "torch.float32",
+                "left_sha256": "f0289129c89da0babdd466f1790ece5b221a4f239cda594dd52ca08664990f16",
+                "right_sha256": "f0289129c89da0babdd466f1790ece5b221a4f239cda594dd52ca08664990f16",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              }
+            }
+          }
+        ],
+        "outputs_equal": true,
+        "finished_at": "2026-11-06T11:23:49.894064+00:00"
+      },
+      "artifact": {
+        "local_path": "backup/model-coldstart-20261106T071747Z/reports/prott5-cpu/report.json",
+        "sha256": "1c4da617d21090be20d35e78de3a16e291ff0f7af252503a3f6a686409d1c5f6"
+      }
+    },
+    "formal_image_builds": {
+      "cu121": {
+        "status": "PASS",
+        "image": "pepplatform-model-coldstart-20261106t071747z:cu121",
+        "image_id": "sha256:42fa5ab1dc6ea83e02bc4eaecd60abfa6cc2f8578f05ab575f906fa046abaaca",
+        "artifact": "build-cu121-attempt5-result.json",
+        "source_sha256": {
+          "docker/backend.Dockerfile": "8f46634b2ab47e6afe14db78325865ff6b73d06784cbeeb8c80580175207c261",
+          "docker/check_runtime.py": "846baff0fc763c814e427370262cc801631fb97dcfa5befd8e5eb963c870af96",
+          "requirements.txt": "af960a04a9844e8379994c62764045685e5a3eebd86c561e0c13f977c0c9a55c",
+          "requirements-pretrained.txt": "946d553954141e312ab1f72fcc5a800bf8a930ad104f68174c5c4a7c6ccdb367",
+          "requirements-web.txt": "abca0480e52e20a4133db97c1010dc8f4cfe91b62a3442d0aee98eae78c5ec42",
+          "docker-compose.yml": "bc22f0e85f1e0c5c085da2594ee0cf8cb5a045b0fa64cb624f2d4093f1203f1f",
+          "docker-compose.cpu.yml": "d024f0232b230423d9b826f78e29d657493c77ca2363bd5708becc5473b768d7"
+        },
+        "cache_scope": "Fresh base/system layer from this task may be reused; model runtime and HF cache remain empty. Pip layer rebuilt for explicit source controls."
+      },
+      "cpu": {
+        "status": "PASS",
+        "image": "pepplatform-model-coldstart-20261106t071747z:cpu",
+        "image_id": "sha256:9d1147ca40d6f135d9533cce39c2980c3a0ab59849848813a0c518299975bcc1",
+        "artifact": "build-cpu-attempt2-result.json",
+        "source_sha256": {
+          "docker/backend.Dockerfile": "8f46634b2ab47e6afe14db78325865ff6b73d06784cbeeb8c80580175207c261",
+          "docker/check_runtime.py": "846baff0fc763c814e427370262cc801631fb97dcfa5befd8e5eb963c870af96",
+          "requirements.txt": "af960a04a9844e8379994c62764045685e5a3eebd86c561e0c13f977c0c9a55c",
+          "requirements-pretrained.txt": "946d553954141e312ab1f72fcc5a800bf8a930ad104f68174c5c4a7c6ccdb367",
+          "requirements-web.txt": "abca0480e52e20a4133db97c1010dc8f4cfe91b62a3442d0aee98eae78c5ec42",
+          "docker-compose.yml": "bc22f0e85f1e0c5c085da2594ee0cf8cb5a045b0fa64cb624f2d4093f1203f1f",
+          "docker-compose.cpu.yml": "d024f0232b230423d9b826f78e29d657493c77ca2363bd5708becc5473b768d7"
+        },
+        "cache_scope": "Fresh base/system layer from this task may be reused; model runtime and HF cache remain empty. Pip layer rebuilt for explicit source controls."
+      }
+    },
+    "task_local_base_image_fetch": {
+      "status": "PASS",
+      "started_at": "2026-11-06T07:52:54.186848+00:00",
+      "scope": "Curl download of Google's exact Docker Hub base-image cache, validating official index/platform/config/layer digests and uncompressed diff IDs; model cache remains empty.",
+      "base_tag": "python:3.10.19-slim",
+      "source_registry": "mirror.gcr.io",
+      "layers": [
+        {
+          "compressed": "sha256:206356c42440674ecbdf1070cf70ce8ef7885ac2e5c56f1ecf800b758f6b0419",
+          "uncompressed": "sha256:a257f20c716c7b5d0474b1b5998f4d1090b573d90b82f764b8f1f1faeb4b524f",
+          "compressed_bytes": 29778632
+        },
+        {
+          "compressed": "sha256:695b0c6490cea8b508423bd00e23a2b1e3437a46af056853b88ca53965e5daf6",
+          "uncompressed": "sha256:b1224b06974b64d5e0ac3f98cb47774bfe0669919ed3a3d0b0b83f5dc4e6953f",
+          "compressed_bytes": 1292736
+        },
+        {
+          "compressed": "sha256:5966c70ebec28f24b556ba7c9e7d9427bc41ef80515796723ac890521edde552",
+          "uncompressed": "sha256:34a30cbe4b953f64db147e25889c2c0a040f9a21694594d91e06154e1e63090d",
+          "compressed_bytes": 13820352
+        },
+        {
+          "compressed": "sha256:6b8e12a61ce57f435e0a669857d9e0a3df67a745a64e0493c2a6604d279ef33c",
+          "uncompressed": "sha256:42abf02bb421c7631f4dc1025c4ccf18af2f6129a5b63d6e2325a787556b8df3",
+          "compressed_bytes": 250
+        }
+      ],
+      "official_index_digest": "sha256:ed9e9e63d6b7c71c8f80eae61ab889d3912ca097a8206dca52874457be507cf1",
+      "official_platform_manifest_digest": "sha256:191da4756f0fc10fff1abe721141ba4fa03aa2633a6df3da25fdc2408de40f13",
+      "image_id": "sha256:cc586caabe4b22e6cfd294ff8160b3fb42dd172b0e6363e46e41062cfecf1013",
+      "python_version": "3.10.19",
+      "archive_sha256": "2511bd40e26364e2324e4373062dd2e7f3d2e1cf994eee61ffc7967ed6358960",
+      "finished_at": "2026-11-06T07:53:28.129460+00:00"
+    },
+    "docs_site_build": {
+      "status": "PASS",
+      "command": "npm run docs:build",
+      "vitepress": "1.6.4",
+      "scope": "Updated bilingual source pages; built locally, not published.",
+      "warning": "Existing generated chunk-size warning."
+    },
+    "docs_site_full_source_check": {
+      "status": "FAIL",
+      "scope": "The same pre-existing source errors and missing translation link; no new installation-page error.",
+      "errors": [
+        "Missing English page: concepts/classification-loss.md",
+        "Official ESM-C/ESM3 runtime versions and requirements pin disagree",
+        "concepts/classification-loss.html: missing built resource /pepplatform-docs/en/concepts/classification-loss"
+      ],
+      "checked_markdown_pages": 143,
+      "checked_built_html_pages": 144
+    },
+    "final_source_lint_links_and_sync": {
+      "status": "PASS",
+      "checked_at": "2026-11-06T10:37:26.659222+00:00",
+      "identical_paired_files": 16,
+      "deployment_docs_equal_except_clone_url": true,
+      "frozen_lock_and_recipe_unchanged": true,
+      "commands": [
+        {
+          "cwd": "/disk2/home/qts/code/PepPlatform_publish",
+          "command": [
+            "git",
+            "diff",
+            "--check"
+          ],
+          "exit_code": 0,
+          "output": ""
+        },
+        {
+          "cwd": "/disk2/home/qts/code/PepPlatform_publish",
+          "command": [
+            "ruff",
+            "check",
+            "docker/check_runtime.py",
+            "docker/download_models.py",
+            "tools/verify_prott5_equivalence.py",
+            "tools/verify_prott5_loader_rng.py",
+            "tools/verify_prott5_restore.py",
+            "tests/test_paper_runtime.py",
+            "tests/test_docker_models.py"
+          ],
+          "exit_code": 0,
+          "output": "All checks passed!\n"
+        },
+        {
+          "cwd": "/disk2/home/qts/code/PepPlatform_publish",
+          "command": [
+            "ruff",
+            "format",
+            "--check",
+            "docker/check_runtime.py",
+            "docker/download_models.py",
+            "tools/verify_prott5_equivalence.py",
+            "tools/verify_prott5_loader_rng.py",
+            "tools/verify_prott5_restore.py",
+            "tests/test_paper_runtime.py",
+            "tests/test_docker_models.py"
+          ],
+          "exit_code": 0,
+          "output": "7 files already formatted\n"
+        },
+        {
+          "cwd": "/disk2/home/qts/code/PepPlatform",
+          "command": [
+            "git",
+            "diff",
+            "--check"
+          ],
+          "exit_code": 0,
+          "output": ""
+        },
+        {
+          "cwd": "/disk2/home/qts/code/PepPlatform",
+          "command": [
+            "ruff",
+            "check",
+            "docker/check_runtime.py",
+            "docker/download_models.py",
+            "tools/verify_prott5_equivalence.py",
+            "tools/verify_prott5_loader_rng.py",
+            "tools/verify_prott5_restore.py",
+            "tests/test_paper_runtime.py",
+            "tests/test_docker_models.py"
+          ],
+          "exit_code": 0,
+          "output": "All checks passed!\n"
+        },
+        {
+          "cwd": "/disk2/home/qts/code/PepPlatform",
+          "command": [
+            "ruff",
+            "format",
+            "--check",
+            "docker/check_runtime.py",
+            "docker/download_models.py",
+            "tools/verify_prott5_equivalence.py",
+            "tools/verify_prott5_loader_rng.py",
+            "tools/verify_prott5_restore.py",
+            "tests/test_paper_runtime.py",
+            "tests/test_docker_models.py"
+          ],
+          "exit_code": 0,
+          "output": "7 files already formatted\n"
+        }
+      ],
+      "errors": [],
+      "documentation_updated_at": "2026-11-06T11:32:50.986572+00:00",
+      "final_proof_documents_synchronized": true,
+      "final_whitespace_check_both_repositories": "PASS"
+    },
+    "new_gpu_container_execution": {
+      "status": "PASS",
+      "image_id": "sha256:42fa5ab1dc6ea83e02bc4eaecd60abfa6cc2f8578f05ab575f906fa046abaaca",
+      "runtime": {
+        "channel": "cu121",
+        "python_version": "3.10.19",
+        "packages": {
+          "joblib": "1.5.3",
+          "gensim": "4.4.0",
+          "numpy": "2.2.6",
+          "scipy": "1.15.3",
+          "scikit-learn": "1.7.2",
+          "xgboost": "3.1.3",
+          "lightgbm": "4.6.0",
+          "tqdm": "4.67.1",
+          "transformers": "4.48.1",
+          "tokenizers": "0.21.4",
+          "esm": "3.2.0",
+          "sentencepiece": "0.2.1",
+          "huggingface-hub": "0.36.0",
+          "safetensors": "0.7.0",
+          "torch": "2.5.1+cu121",
+          "torchvision": "0.20.1+cu121"
+        },
+        "cuda_runtime_version": "12.1",
+        "cudnn_version": 90100,
+        "requested_device": "cuda",
+        "device_usable": true,
+        "gpu_name": "NVIDIA GeForce RTX 3090",
+        "mismatches": {},
+        "status": "PASS"
+      },
+      "image_source_sha256": {
+        "docker/download_models.py": "3b6e8777f84364a1072d874a131822a94d2e5afa2eb0299b666738d1fb1e6347",
+        "docker/check_runtime.py": "846baff0fc763c814e427370262cc801631fb97dcfa5befd8e5eb963c870af96",
+        "docker/models.lock.json": "93945413afa13c15f06872a79d4325d0c5a78894c714a3afb04282675407ebc5",
+        "docker/prott5.restore.json": "37b912f08cf6b8a12dba725123946c14c849528627411ff32ecb1759d88b75bc",
+        "pepplatform/encoders.py": "73d21f9787e5fe05b9c90c522931d6b3e4205330adf03cafba67a00794567178",
+        "pepplatform/tokenizers.py": "a203078ca3fb48819b270adef6c33c1d078f2fa8454fae5c58c0c5450c8ea3bc",
+        "pepplatform/prott5.py": "f87e6ec522b7e3c91fca013fda9d4a7948a1f10c298d42f59b4eb4a5c2605c0b",
+        "pepplatform/models.py": "89207ded8bc479ca22adaeb8da67af77cb74b8e8d5545527c99daa75a9c5a505",
+        "pepplatform/workflow.py": "116bb50e2d28067d6620195295d4ea7064068bbd1912e90703f29855523ca5cd",
+        "pepplatform/cache_provenance.py": "cd774ad902fde5e1cefdf1056406102aecd8715c8cae2ec467b0d259d5362bd4"
+      },
+      "artifact": "gpu-probe-attempt2-result.json"
+    },
+    "six_checkpoint_default_cold_download": {
+      "status": "PASS",
+      "command": [
+        "rtk",
+        "proxy",
+        "docker",
+        "compose",
+        "--env-file",
+        "/disk2/home/qts/code/PepPlatform_publish/backup/model-coldstart-20261106T071747Z/validation.env",
+        "-p",
+        "pep-model-coldstart-20261106t071747z-cu121",
+        "-f",
+        "/disk2/home/qts/code/PepPlatform_publish/docker-compose.yml",
+        "-f",
+        "/disk2/home/qts/code/PepPlatform_publish/backup/model-coldstart-20261106T071747Z/compose.validation.yml",
+        "-f",
+        "/disk2/home/qts/code/PepPlatform_publish/backup/model-coldstart-20261106T071747Z/compose.image-cu121.yml",
+        "run",
+        "--rm",
+        "--no-deps",
+        "--name",
+        "pep-model-coldstart-20261106t071747z-cold-download-attempt4",
+        "backend",
+        "python",
+        "docker/download_models.py"
+      ],
+      "image_id": "sha256:42fa5ab1dc6ea83e02bc4eaecd60abfa6cc2f8578f05ab575f906fa046abaaca",
+      "initial_model_and_cache_file_count": 0,
+      "initial_empty_directories": [
+        "pretrained",
+        "pretrained/models"
+      ],
+      "existing_model_or_cache_mounts": false,
+      "source_endpoint": "https://huggingface.co",
+      "network_mode": "host",
+      "tls12_compatibility_enabled": true,
+      "certificate_and_hostname_checks_enabled": true,
+      "effective_xet_enabled": false,
+      "installed_lock_sha256": "93945413afa13c15f06872a79d4325d0c5a78894c714a3afb04282675407ebc5",
+      "artifact": "cold-download-attempt4-result.json",
+      "scope": "Documented default preparation entry in a fresh task volume; explicit documented host proxy, storage and TLS options. Build package cache contains no model assets."
+    },
+    "prott5_gpu_restoration_comparison": {
+      "status": "PASS",
+      "device": "cuda",
+      "scope": "New formal image; original paper shards versus this run's cold-downloaded and restored files.",
+      "files_match_lock": true,
+      "verified_file_count": 13,
+      "rng_equal": true,
+      "classifier_initialization_equal": true,
+      "synthetic_training_equal": true,
+      "synthetic_steps": 3,
+      "synthetic_losses": {
+        "original": [
+          0.6929957270622253,
+          0.6006767749786377,
+          0.5040589570999146
+        ],
+        "restored": [
+          0.6929957270622253,
+          0.6006767749786377,
+          0.5040589570999146
+        ]
+      },
+      "outputs_equal": true,
+      "probe_count": 9,
+      "sequence_count": 63,
+      "full_report": {
+        "status": "PASS",
+        "created_at": "2026-11-06T11:09:52.593165+00:00",
+        "scope": "Exact restoration, offline loading, RNG, features and three synthetic CNN steps",
+        "official_directory": "/var/lib/pepplatform/huggingface/hub/models--Rostlab--prot_t5_xl_uniref50/snapshots/973be27c52ee6474de9c945952a8008aeb2a1a73",
+        "original_directory": "/disk2/home/qts/code/PepPlatform/models/prott5",
+        "restored_directory": "/var/lib/pepplatform/pretrained/.versions/prott5/paper/c1e7b7328276917e729bf11585ac6b4b7965aa33251edc882ee2fad7d47d307d",
+        "rerun_command": "/usr/local/bin/python /app/tools/verify_prott5_restore.py --official /var/lib/pepplatform/huggingface/hub/models--Rostlab--prot_t5_xl_uniref50/snapshots/973be27c52ee6474de9c945952a8008aeb2a1a73 --sharded /disk2/home/qts/code/PepPlatform/models/prott5 --restored /var/lib/pepplatform/pretrained/.versions/prott5/paper/c1e7b7328276917e729bf11585ac6b4b7965aa33251edc882ee2fad7d47d307d --reference /disk2/home/qts/code/PepPlatform/experiment_paper/current_results.json --output /verification/prott5-cu121-rerun --threads 4 --device cuda",
+        "source_files": {
+          "tools/verify_prott5_restore.py": "715d7ac20bf0e29149328d1e4b316c6be79c3f044607ab4c1c3424301ec9cadf",
+          "tools/verify_prott5_equivalence.py": "00f9d55506599917a620f0d0860c0aa227adc891c9ac287b28e2b6381b4df3d9",
+          "tools/verify_prott5_loader_rng.py": "8c3cfeb61039514c8cd4ad34d6292528446e01b34f13546043fb5e7fdffb537e",
+          "docker/download_models.py": "3b6e8777f84364a1072d874a131822a94d2e5afa2eb0299b666738d1fb1e6347",
+          "docker/prott5.restore.json": "37b912f08cf6b8a12dba725123946c14c849528627411ff32ecb1759d88b75bc",
+          "docker/models.lock.json": "93945413afa13c15f06872a79d4325d0c5a78894c714a3afb04282675407ebc5",
+          "pepplatform/encoders.py": "73d21f9787e5fe05b9c90c522931d6b3e4205330adf03cafba67a00794567178",
+          "pepplatform/tokenizers.py": "a203078ca3fb48819b270adef6c33c1d078f2fa8454fae5c58c0c5450c8ea3bc",
+          "pepplatform/prott5.py": "f87e6ec522b7e3c91fca013fda9d4a7948a1f10c298d42f59b4eb4a5c2605c0b",
+          "pepplatform/models.py": "89207ded8bc479ca22adaeb8da67af77cb74b8e8d5545527c99daa75a9c5a505",
+          "pepplatform/workflow.py": "116bb50e2d28067d6620195295d4ea7064068bbd1912e90703f29855523ca5cd",
+          "pepplatform/cache_provenance.py": "cd774ad902fde5e1cefdf1056406102aecd8715c8cae2ec467b0d259d5362bd4"
+        },
+        "environment": {
+          "torch": "2.5.1+cu121",
+          "transformers": "4.48.1",
+          "tokenizers": "0.21.4",
+          "sentencepiece": "0.2.1",
+          "safetensors": "0.7.0"
+        },
+        "files_match_lock": true,
+        "reference": {
+          "results_id": "function_policy_completion_20261022T0620Z_aupr_trapezoidal_v2",
+          "registration_sha256": "eb16353b3aa8a7441c18f2e53a8c039c5f2e45d91649227b346825266c82e8fd",
+          "results_index_sha256": "0e7bdb65a95ce26bb186a5efe1cff740a52bacb9e92c28734ed08c0ca8c6c71c",
+          "protocol_sha256": "d92d5d831cff8873eccf02a567fd5c7f7db55c08e11af6d886cb2388c1628be3",
+          "cohort_sha256": "778c71578722bddd3d254fbf1363a1abf74d2e624ccf36d2aec962b376fa5f35",
+          "candidate_count": 100,
+          "counts": {
+            "pep_function": 35,
+            "pep_hlaii": 20,
+            "pep_mhci": 20,
+            "pep_protein_interaction": 25
+          }
+        },
+        "official_revision": "973be27c52ee6474de9c945952a8008aeb2a1a73",
+        "official_sha256": "c06141d42e93c12b5f6d95c701952156bd4079661f5f2d981d0d2036ba96dae9",
+        "recipe_sha256": "37b912f08cf6b8a12dba725123946c14c849528627411ff32ecb1759d88b75bc",
+        "lock_sha256": "93945413afa13c15f06872a79d4325d0c5a78894c714a3afb04282675407ebc5",
+        "weight_sha256": "c1e7b7328276917e729bf11585ac6b4b7965aa33251edc882ee2fad7d47d307d",
+        "model_fingerprint": "tree:28c687dd642fd72bec8209c50ecf643368651246d4c7296e350aa75d04f32e5e",
+        "verified_files": {
+          ".gitattributes": {
+            "size_bytes": 690,
+            "sha256": "98cf30ae2568ea1d18641cc0d1d9a2f9041cc43aea81f5d719654abd9e290e0d"
+          },
+          "README.md": {
+            "size_bytes": 7648,
+            "sha256": "d12aa256233754050384dd196f84fa3509bc540e4ee180e8d230f1d59a7786c3"
+          },
+          "config.json": {
+            "size_bytes": 707,
+            "sha256": "296e51c406d64d7848e6ee2d66d449f2315f54227699a9066d355dad1b2a969e"
+          },
+          "model-00001-of-00006.safetensors": {
+            "size_bytes": 1946772976,
+            "sha256": "302b5fd0e997b9fda9da846af92527e3f41da90defebf558e9cafc16b09334ea"
+          },
+          "model-00002-of-00006.safetensors": {
+            "size_bytes": 1946248656,
+            "sha256": "8ff20419580de3605bced48ef64888f185a1a0ab7315e5221327e56412680452"
+          },
+          "model-00003-of-00006.safetensors": {
+            "size_bytes": 1946257792,
+            "sha256": "5ee927fd162303f86a28d66ab07983a61c4b2378dfa106585ccc44b05ded19a3"
+          },
+          "model-00004-of-00006.safetensors": {
+            "size_bytes": 1996590544,
+            "sha256": "fa08cec6c81dc0ca3da632d416db20bb6b3a983bd8360177d1c588e29421c70b"
+          },
+          "model-00005-of-00006.safetensors": {
+            "size_bytes": 1963040536,
+            "sha256": "0f0b84e8c43b9aa2867b61e586327dd70d1e24c0517c01c1f11e04ce3f758c60"
+          },
+          "model-00006-of-00006.safetensors": {
+            "size_bytes": 1476473104,
+            "sha256": "da153b54dea8b379d9ae68043d26e6bc999cef817a52e905a5ebe0ed237d2774"
+          },
+          "model.safetensors.index.json": {
+            "size_bytes": 45981,
+            "sha256": "c7597b01c5a03e2b10db89d31de7745d4ea86997e011cf746136d62945ab1295"
+          },
+          "special_tokens_map.json": {
+            "size_bytes": 1786,
+            "sha256": "4720c0fddbe4c5991334f85ad7073d9bd0a294a8ba4641a2f8dab614ca825949"
+          },
+          "spiece.model": {
+            "size_bytes": 237990,
+            "sha256": "74da7b4afcde53faa570114b530c726135bdfcdb813dec3abfb27f9d44db7324"
+          },
+          "tokenizer_config.json": {
+            "size_bytes": 24,
+            "sha256": "a5064475340d80a560463f49921407d901eef3e89667a931eb81a186633eff4b"
+          }
+        },
+        "case_manifest_sha256": "ee41988869fc70e5aaa43248f612265d4c5cd60ce7f86c4733901183a65940c0",
+        "classifier_probe": {
+          "candidate": "c001_prott5_residue_cnn_mlp",
+          "metadata_sha256": "05bf1b350ac1ed1f3b38d1cbeec7882ce3bb8021600813f5511adaf69a8be0c7",
+          "constructor_arguments": {
+            "architecture": "cnn",
+            "input_dim": 1024,
+            "adapter_dim": 128,
+            "max_length": 128,
+            "num_classes": 15,
+            "dropout": 0.2,
+            "head_hidden_dims": [
+              128
+            ],
+            "head_activation": "relu",
+            "head_dropout": 0.2
+          },
+          "synthetic_training": {
+            "steps": 3,
+            "optimizer": "AdamW",
+            "lr": 0.001,
+            "weight_decay": 0
+          }
+        },
+        "execution": {
+          "device": "cuda",
+          "threads": 4,
+          "seed": 42,
+          "cuda_runtime_version": "12.1",
+          "cudnn_version": 90100,
+          "gpu_name": "NVIDIA GeForce RTX 3090"
+        },
+        "identity_validation_passed": true,
+        "loaded_encoder_state_equal": true,
+        "loader_class_equal": true,
+        "rng_equal": true,
+        "classifier_initialization_equal": true,
+        "synthetic_training_equal": true,
+        "synthetic_losses": {
+          "original": [
+            0.6929957270622253,
+            0.6006767749786377,
+            0.5040589570999146
+          ],
+          "restored": [
+            0.6929957270622253,
+            0.6006767749786377,
+            0.5040589570999146
+          ]
+        },
+        "rng_states": {
+          "original": {
+            "before_loading": {
+              "python": "21feb557e3da2a52be59d0a03105f7314322a903b4cca49a0e125c43cf2885d0",
+              "numpy": "a7f5f1d23152cfb723e961fc900954baa7f903054a4fa500eebefb5d5aff780b",
+              "torch_cpu": "5feb54a46230d321d888e9b43cf5a57492665f199e4377408d79ee460e36679c",
+              "torch_cuda": "aefdce03def94ffed42159e55677ec20e91200e1981f25b1f271b6fd99c3c263"
+            },
+            "after_loading": {
+              "python": "21feb557e3da2a52be59d0a03105f7314322a903b4cca49a0e125c43cf2885d0",
+              "numpy": "a7f5f1d23152cfb723e961fc900954baa7f903054a4fa500eebefb5d5aff780b",
+              "torch_cpu": "61f867dde8a9b0baed999084c52e6548cd37a7c4ed86e20a86ae3dfc030e2cab",
+              "torch_cuda": "aefdce03def94ffed42159e55677ec20e91200e1981f25b1f271b6fd99c3c263"
+            },
+            "after_features": {
+              "python": "21feb557e3da2a52be59d0a03105f7314322a903b4cca49a0e125c43cf2885d0",
+              "numpy": "a7f5f1d23152cfb723e961fc900954baa7f903054a4fa500eebefb5d5aff780b",
+              "torch_cpu": "61f867dde8a9b0baed999084c52e6548cd37a7c4ed86e20a86ae3dfc030e2cab",
+              "torch_cuda": "aefdce03def94ffed42159e55677ec20e91200e1981f25b1f271b6fd99c3c263"
+            },
+            "after_classifier_initialization": {
+              "python": "21feb557e3da2a52be59d0a03105f7314322a903b4cca49a0e125c43cf2885d0",
+              "numpy": "a7f5f1d23152cfb723e961fc900954baa7f903054a4fa500eebefb5d5aff780b",
+              "torch_cpu": "ba1213e2ab7c2abb94044ab60dc0b2a8b14d1191939a28fcbdb1bfc1ccd5616c",
+              "torch_cuda": "aefdce03def94ffed42159e55677ec20e91200e1981f25b1f271b6fd99c3c263"
+            },
+            "after_synthetic_training": {
+              "python": "21feb557e3da2a52be59d0a03105f7314322a903b4cca49a0e125c43cf2885d0",
+              "numpy": "a7f5f1d23152cfb723e961fc900954baa7f903054a4fa500eebefb5d5aff780b",
+              "torch_cpu": "ba1213e2ab7c2abb94044ab60dc0b2a8b14d1191939a28fcbdb1bfc1ccd5616c",
+              "torch_cuda": "f29e18829ce5151cbb2e705b69ed5f48f2d76debb388159fe937e2644f972b11"
+            }
+          },
+          "restored": {
+            "before_loading": {
+              "python": "21feb557e3da2a52be59d0a03105f7314322a903b4cca49a0e125c43cf2885d0",
+              "numpy": "a7f5f1d23152cfb723e961fc900954baa7f903054a4fa500eebefb5d5aff780b",
+              "torch_cpu": "5feb54a46230d321d888e9b43cf5a57492665f199e4377408d79ee460e36679c",
+              "torch_cuda": "aefdce03def94ffed42159e55677ec20e91200e1981f25b1f271b6fd99c3c263"
+            },
+            "after_loading": {
+              "python": "21feb557e3da2a52be59d0a03105f7314322a903b4cca49a0e125c43cf2885d0",
+              "numpy": "a7f5f1d23152cfb723e961fc900954baa7f903054a4fa500eebefb5d5aff780b",
+              "torch_cpu": "61f867dde8a9b0baed999084c52e6548cd37a7c4ed86e20a86ae3dfc030e2cab",
+              "torch_cuda": "aefdce03def94ffed42159e55677ec20e91200e1981f25b1f271b6fd99c3c263"
+            },
+            "after_features": {
+              "python": "21feb557e3da2a52be59d0a03105f7314322a903b4cca49a0e125c43cf2885d0",
+              "numpy": "a7f5f1d23152cfb723e961fc900954baa7f903054a4fa500eebefb5d5aff780b",
+              "torch_cpu": "61f867dde8a9b0baed999084c52e6548cd37a7c4ed86e20a86ae3dfc030e2cab",
+              "torch_cuda": "aefdce03def94ffed42159e55677ec20e91200e1981f25b1f271b6fd99c3c263"
+            },
+            "after_classifier_initialization": {
+              "python": "21feb557e3da2a52be59d0a03105f7314322a903b4cca49a0e125c43cf2885d0",
+              "numpy": "a7f5f1d23152cfb723e961fc900954baa7f903054a4fa500eebefb5d5aff780b",
+              "torch_cpu": "ba1213e2ab7c2abb94044ab60dc0b2a8b14d1191939a28fcbdb1bfc1ccd5616c",
+              "torch_cuda": "aefdce03def94ffed42159e55677ec20e91200e1981f25b1f271b6fd99c3c263"
+            },
+            "after_synthetic_training": {
+              "python": "21feb557e3da2a52be59d0a03105f7314322a903b4cca49a0e125c43cf2885d0",
+              "numpy": "a7f5f1d23152cfb723e961fc900954baa7f903054a4fa500eebefb5d5aff780b",
+              "torch_cpu": "ba1213e2ab7c2abb94044ab60dc0b2a8b14d1191939a28fcbdb1bfc1ccd5616c",
+              "torch_cuda": "f29e18829ce5151cbb2e705b69ed5f48f2d76debb388159fe937e2644f972b11"
+            }
+          }
+        },
+        "output_cases": [
+          {
+            "name": "pep_function.sequence",
+            "sample_count": 8,
+            "bitwise_equal": true,
+            "fields": {
+              "tokens.input_ids": {
+                "left_shape": [
+                  8,
+                  39
+                ],
+                "right_shape": [
+                  8,
+                  39
+                ],
+                "left_dtype": "torch.int64",
+                "right_dtype": "torch.int64",
+                "left_sha256": "00b74495174386dab9db6b49b043d05a278cebbec0002c86d58323cf95388665",
+                "right_sha256": "00b74495174386dab9db6b49b043d05a278cebbec0002c86d58323cf95388665",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              },
+              "tokens.special_tokens_mask": {
+                "left_shape": [
+                  8,
+                  39
+                ],
+                "right_shape": [
+                  8,
+                  39
+                ],
+                "left_dtype": "torch.int64",
+                "right_dtype": "torch.int64",
+                "left_sha256": "6bfb63f2225bb0d010e0fad0bc2fa79f3ac1da95e4539564aacfd8ace819bc6c",
+                "right_sha256": "6bfb63f2225bb0d010e0fad0bc2fa79f3ac1da95e4539564aacfd8ace819bc6c",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              },
+              "tokens.attention_mask": {
+                "left_shape": [
+                  8,
+                  39
+                ],
+                "right_shape": [
+                  8,
+                  39
+                ],
+                "left_dtype": "torch.int64",
+                "right_dtype": "torch.int64",
+                "left_sha256": "2e3ef9107fafddd19c4664796065a9b920908fb6b76518bf8c532e1fe484708a",
+                "right_sha256": "2e3ef9107fafddd19c4664796065a9b920908fb6b76518bf8c532e1fe484708a",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              },
+              "pooled": {
+                "left_shape": [
+                  8,
+                  1024
+                ],
+                "right_shape": [
+                  8,
+                  1024
+                ],
+                "left_dtype": "torch.float32",
+                "right_dtype": "torch.float32",
+                "left_sha256": "f2cd119bfeffe77d7030ce891f5a547dc8b48847b114a9382c1602e3df219485",
+                "right_sha256": "f2cd119bfeffe77d7030ce891f5a547dc8b48847b114a9382c1602e3df219485",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              },
+              "residue": {
+                "left_shape": [
+                  8,
+                  128,
+                  1024
+                ],
+                "right_shape": [
+                  8,
+                  128,
+                  1024
+                ],
+                "left_dtype": "torch.float16",
+                "right_dtype": "torch.float16",
+                "left_sha256": "1a356f2fddd52e1f006f93fc04ddd5af762a75cc1f09e804b98ea4b9cf861572",
+                "right_sha256": "1a356f2fddd52e1f006f93fc04ddd5af762a75cc1f09e804b98ea4b9cf861572",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              },
+              "residue_mask": {
+                "left_shape": [
+                  8,
+                  128
+                ],
+                "right_shape": [
+                  8,
+                  128
+                ],
+                "left_dtype": "torch.bool",
+                "right_dtype": "torch.bool",
+                "left_sha256": "514b8f480b968909123ce994ffb53f42a8f96da1ad425ff76a0c4fcd3a1e15f9",
+                "right_sha256": "514b8f480b968909123ce994ffb53f42a8f96da1ad425ff76a0c4fcd3a1e15f9",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              },
+              "hidden_fp32": {
+                "left_shape": [
+                  8,
+                  39,
+                  1024
+                ],
+                "right_shape": [
+                  8,
+                  39,
+                  1024
+                ],
+                "left_dtype": "torch.float32",
+                "right_dtype": "torch.float32",
+                "left_sha256": "e31fdd7ae786a1984ca8bd5b121721bdc6f6cb7c008957c8911bb123e28f6002",
+                "right_sha256": "e31fdd7ae786a1984ca8bd5b121721bdc6f6cb7c008957c8911bb123e28f6002",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              }
+            }
+          },
+          {
+            "name": "pep_protein_interaction.peptide",
+            "sample_count": 8,
+            "bitwise_equal": true,
+            "fields": {
+              "tokens.input_ids": {
+                "left_shape": [
+                  8,
+                  40
+                ],
+                "right_shape": [
+                  8,
+                  40
+                ],
+                "left_dtype": "torch.int64",
+                "right_dtype": "torch.int64",
+                "left_sha256": "474ca24e2aa5d168f3a17bc5e624421cd559abbfe20516c369778c0d79e1bc28",
+                "right_sha256": "474ca24e2aa5d168f3a17bc5e624421cd559abbfe20516c369778c0d79e1bc28",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              },
+              "tokens.special_tokens_mask": {
+                "left_shape": [
+                  8,
+                  40
+                ],
+                "right_shape": [
+                  8,
+                  40
+                ],
+                "left_dtype": "torch.int64",
+                "right_dtype": "torch.int64",
+                "left_sha256": "dc76966848be7b62dc3021e760e4af46b8dfb38920d5ffdb45b5a96f77d8d9de",
+                "right_sha256": "dc76966848be7b62dc3021e760e4af46b8dfb38920d5ffdb45b5a96f77d8d9de",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              },
+              "tokens.attention_mask": {
+                "left_shape": [
+                  8,
+                  40
+                ],
+                "right_shape": [
+                  8,
+                  40
+                ],
+                "left_dtype": "torch.int64",
+                "right_dtype": "torch.int64",
+                "left_sha256": "7c47223dc8f31e442c5332a7ea81febc7fd878c9a5ae70b28f8690f492b8360e",
+                "right_sha256": "7c47223dc8f31e442c5332a7ea81febc7fd878c9a5ae70b28f8690f492b8360e",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              },
+              "pooled": {
+                "left_shape": [
+                  8,
+                  1024
+                ],
+                "right_shape": [
+                  8,
+                  1024
+                ],
+                "left_dtype": "torch.float32",
+                "right_dtype": "torch.float32",
+                "left_sha256": "7feab100aae05ac3d6e53df3c39601a064b6f598f4080a22660ae904e29d42a9",
+                "right_sha256": "7feab100aae05ac3d6e53df3c39601a064b6f598f4080a22660ae904e29d42a9",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              },
+              "residue": {
+                "left_shape": [
+                  8,
+                  511,
+                  1024
+                ],
+                "right_shape": [
+                  8,
+                  511,
+                  1024
+                ],
+                "left_dtype": "torch.float16",
+                "right_dtype": "torch.float16",
+                "left_sha256": "f511992e285fc8ce83525f601e85cc21916087c3aecc2247b64d34b92c69496f",
+                "right_sha256": "f511992e285fc8ce83525f601e85cc21916087c3aecc2247b64d34b92c69496f",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              },
+              "residue_mask": {
+                "left_shape": [
+                  8,
+                  511
+                ],
+                "right_shape": [
+                  8,
+                  511
+                ],
+                "left_dtype": "torch.bool",
+                "right_dtype": "torch.bool",
+                "left_sha256": "2f2855ad5f48a72622e84bce853ad980cbfe8f674cbb414f4e1f45651b0892bd",
+                "right_sha256": "2f2855ad5f48a72622e84bce853ad980cbfe8f674cbb414f4e1f45651b0892bd",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              },
+              "hidden_fp32": {
+                "left_shape": [
+                  8,
+                  40,
+                  1024
+                ],
+                "right_shape": [
+                  8,
+                  40,
+                  1024
+                ],
+                "left_dtype": "torch.float32",
+                "right_dtype": "torch.float32",
+                "left_sha256": "047f6ff265e4697c4390159daea4297bedd05ea36c0c8b2889a23caecfcddf76",
+                "right_sha256": "047f6ff265e4697c4390159daea4297bedd05ea36c0c8b2889a23caecfcddf76",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              }
+            }
+          },
+          {
+            "name": "pep_protein_interaction.partner",
+            "sample_count": 8,
+            "bitwise_equal": true,
+            "fields": {
+              "tokens.input_ids": {
+                "left_shape": [
+                  8,
+                  340
+                ],
+                "right_shape": [
+                  8,
+                  340
+                ],
+                "left_dtype": "torch.int64",
+                "right_dtype": "torch.int64",
+                "left_sha256": "c9253df7f17dc5b0f70e5608c5c01f1b1b41b59f5b52c2df7a686de788172bbb",
+                "right_sha256": "c9253df7f17dc5b0f70e5608c5c01f1b1b41b59f5b52c2df7a686de788172bbb",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              },
+              "tokens.special_tokens_mask": {
+                "left_shape": [
+                  8,
+                  340
+                ],
+                "right_shape": [
+                  8,
+                  340
+                ],
+                "left_dtype": "torch.int64",
+                "right_dtype": "torch.int64",
+                "left_sha256": "7a7058f4352944ad668432712fe4e203ce522f6d7424f269dda73efb065597e9",
+                "right_sha256": "7a7058f4352944ad668432712fe4e203ce522f6d7424f269dda73efb065597e9",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              },
+              "tokens.attention_mask": {
+                "left_shape": [
+                  8,
+                  340
+                ],
+                "right_shape": [
+                  8,
+                  340
+                ],
+                "left_dtype": "torch.int64",
+                "right_dtype": "torch.int64",
+                "left_sha256": "ba4448142bf005788012e5b6f88cf94364b7b4f8071df3f9a087f9dc299ab608",
+                "right_sha256": "ba4448142bf005788012e5b6f88cf94364b7b4f8071df3f9a087f9dc299ab608",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              },
+              "pooled": {
+                "left_shape": [
+                  8,
+                  1024
+                ],
+                "right_shape": [
+                  8,
+                  1024
+                ],
+                "left_dtype": "torch.float32",
+                "right_dtype": "torch.float32",
+                "left_sha256": "67e10ee480b3963d579702696e5ae21029c3116da58f8ab3f4279d4ec2dfc116",
+                "right_sha256": "67e10ee480b3963d579702696e5ae21029c3116da58f8ab3f4279d4ec2dfc116",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              },
+              "residue": {
+                "left_shape": [
+                  8,
+                  511,
+                  1024
+                ],
+                "right_shape": [
+                  8,
+                  511,
+                  1024
+                ],
+                "left_dtype": "torch.float16",
+                "right_dtype": "torch.float16",
+                "left_sha256": "bf303ec61e2a9fefd568b612fdaf888f1f3f9565116a5a45eb0bee41cb42e249",
+                "right_sha256": "bf303ec61e2a9fefd568b612fdaf888f1f3f9565116a5a45eb0bee41cb42e249",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              },
+              "residue_mask": {
+                "left_shape": [
+                  8,
+                  511
+                ],
+                "right_shape": [
+                  8,
+                  511
+                ],
+                "left_dtype": "torch.bool",
+                "right_dtype": "torch.bool",
+                "left_sha256": "76431d365ad54e3d8ebed2bc172f7bc0047b342e735334165b39772f54fed0ab",
+                "right_sha256": "76431d365ad54e3d8ebed2bc172f7bc0047b342e735334165b39772f54fed0ab",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              },
+              "hidden_fp32": {
+                "left_shape": [
+                  8,
+                  340,
+                  1024
+                ],
+                "right_shape": [
+                  8,
+                  340,
+                  1024
+                ],
+                "left_dtype": "torch.float32",
+                "right_dtype": "torch.float32",
+                "left_sha256": "ad96bb75b476cae3b017d47bc6099e3e1d92d2a82635cdc5107ce47059f7974e",
+                "right_sha256": "ad96bb75b476cae3b017d47bc6099e3e1d92d2a82635cdc5107ce47059f7974e",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              }
+            }
+          },
+          {
+            "name": "pep_mhci.peptide",
+            "sample_count": 8,
+            "bitwise_equal": true,
+            "fields": {
+              "tokens.input_ids": {
+                "left_shape": [
+                  8,
+                  12
+                ],
+                "right_shape": [
+                  8,
+                  12
+                ],
+                "left_dtype": "torch.int64",
+                "right_dtype": "torch.int64",
+                "left_sha256": "4eaae6818c8ab090c88c19659ae51bb42d50e2623f8349eaf4b0250cb3233734",
+                "right_sha256": "4eaae6818c8ab090c88c19659ae51bb42d50e2623f8349eaf4b0250cb3233734",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              },
+              "tokens.special_tokens_mask": {
+                "left_shape": [
+                  8,
+                  12
+                ],
+                "right_shape": [
+                  8,
+                  12
+                ],
+                "left_dtype": "torch.int64",
+                "right_dtype": "torch.int64",
+                "left_sha256": "29b5b70150246d0bb9ff69bddbe2c8323aa0dcba308e12d8828eb3c724fa8c3e",
+                "right_sha256": "29b5b70150246d0bb9ff69bddbe2c8323aa0dcba308e12d8828eb3c724fa8c3e",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              },
+              "tokens.attention_mask": {
+                "left_shape": [
+                  8,
+                  12
+                ],
+                "right_shape": [
+                  8,
+                  12
+                ],
+                "left_dtype": "torch.int64",
+                "right_dtype": "torch.int64",
+                "left_sha256": "cdf2927d338c943ee7a0b84bab5aae8066afc2e39289cb4c5c43d3ff386273a2",
+                "right_sha256": "cdf2927d338c943ee7a0b84bab5aae8066afc2e39289cb4c5c43d3ff386273a2",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              },
+              "pooled": {
+                "left_shape": [
+                  8,
+                  1024
+                ],
+                "right_shape": [
+                  8,
+                  1024
+                ],
+                "left_dtype": "torch.float32",
+                "right_dtype": "torch.float32",
+                "left_sha256": "febbb3835f532a7e09be5bbb63c96949fc11046099ffbdbe5cb7a4ec8019f68e",
+                "right_sha256": "febbb3835f532a7e09be5bbb63c96949fc11046099ffbdbe5cb7a4ec8019f68e",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              },
+              "residue": {
+                "left_shape": [
+                  8,
+                  48,
+                  1024
+                ],
+                "right_shape": [
+                  8,
+                  48,
+                  1024
+                ],
+                "left_dtype": "torch.float16",
+                "right_dtype": "torch.float16",
+                "left_sha256": "934b2d177ce33405a5c2dbd512cde4bfd06478b52736d0a823c75b5170491e8e",
+                "right_sha256": "934b2d177ce33405a5c2dbd512cde4bfd06478b52736d0a823c75b5170491e8e",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              },
+              "residue_mask": {
+                "left_shape": [
+                  8,
+                  48
+                ],
+                "right_shape": [
+                  8,
+                  48
+                ],
+                "left_dtype": "torch.bool",
+                "right_dtype": "torch.bool",
+                "left_sha256": "d56b18991f71a5899e300dafb838c2814ca85ebd18b71e003148678a7019c995",
+                "right_sha256": "d56b18991f71a5899e300dafb838c2814ca85ebd18b71e003148678a7019c995",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              },
+              "hidden_fp32": {
+                "left_shape": [
+                  8,
+                  12,
+                  1024
+                ],
+                "right_shape": [
+                  8,
+                  12,
+                  1024
+                ],
+                "left_dtype": "torch.float32",
+                "right_dtype": "torch.float32",
+                "left_sha256": "7c5d78424baef19f9beb8fd12986b867998cb8a308cf3a14d8fae06f1f92eaf9",
+                "right_sha256": "7c5d78424baef19f9beb8fd12986b867998cb8a308cf3a14d8fae06f1f92eaf9",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              }
+            }
+          },
+          {
+            "name": "pep_mhci.partner",
+            "sample_count": 8,
+            "bitwise_equal": true,
+            "fields": {
+              "tokens.input_ids": {
+                "left_shape": [
+                  8,
+                  31
+                ],
+                "right_shape": [
+                  8,
+                  31
+                ],
+                "left_dtype": "torch.int64",
+                "right_dtype": "torch.int64",
+                "left_sha256": "8cdd88f912b3362e73bd022c20d5e97c1a720025e3e87a6314737a83779cc354",
+                "right_sha256": "8cdd88f912b3362e73bd022c20d5e97c1a720025e3e87a6314737a83779cc354",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              },
+              "tokens.special_tokens_mask": {
+                "left_shape": [
+                  8,
+                  31
+                ],
+                "right_shape": [
+                  8,
+                  31
+                ],
+                "left_dtype": "torch.int64",
+                "right_dtype": "torch.int64",
+                "left_sha256": "2cbeab26313d7473001164335c13c8b0fad7c3b4915cf3f2b138bd1aee18f2f1",
+                "right_sha256": "2cbeab26313d7473001164335c13c8b0fad7c3b4915cf3f2b138bd1aee18f2f1",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              },
+              "tokens.attention_mask": {
+                "left_shape": [
+                  8,
+                  31
+                ],
+                "right_shape": [
+                  8,
+                  31
+                ],
+                "left_dtype": "torch.int64",
+                "right_dtype": "torch.int64",
+                "left_sha256": "4037adf099b2d2a8b45398303d2983d70cd5d09b13192bab507d1baaef3de9d8",
+                "right_sha256": "4037adf099b2d2a8b45398303d2983d70cd5d09b13192bab507d1baaef3de9d8",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              },
+              "pooled": {
+                "left_shape": [
+                  8,
+                  1024
+                ],
+                "right_shape": [
+                  8,
+                  1024
+                ],
+                "left_dtype": "torch.float32",
+                "right_dtype": "torch.float32",
+                "left_sha256": "0b94143dcf51c2a0d5108bfcfe0bc9ccb3365f7804289111f2d3711f364a7901",
+                "right_sha256": "0b94143dcf51c2a0d5108bfcfe0bc9ccb3365f7804289111f2d3711f364a7901",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              },
+              "residue": {
+                "left_shape": [
+                  8,
+                  48,
+                  1024
+                ],
+                "right_shape": [
+                  8,
+                  48,
+                  1024
+                ],
+                "left_dtype": "torch.float16",
+                "right_dtype": "torch.float16",
+                "left_sha256": "aa97861d309b1b0b4b25f356f878df726cb0b496d0e0c6e80167f0112213595b",
+                "right_sha256": "aa97861d309b1b0b4b25f356f878df726cb0b496d0e0c6e80167f0112213595b",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              },
+              "residue_mask": {
+                "left_shape": [
+                  8,
+                  48
+                ],
+                "right_shape": [
+                  8,
+                  48
+                ],
+                "left_dtype": "torch.bool",
+                "right_dtype": "torch.bool",
+                "left_sha256": "76d69d32bc67581f9bb83dd09f5c803ec88955a9782b2e4cda82a3d19f66803f",
+                "right_sha256": "76d69d32bc67581f9bb83dd09f5c803ec88955a9782b2e4cda82a3d19f66803f",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              },
+              "hidden_fp32": {
+                "left_shape": [
+                  8,
+                  31,
+                  1024
+                ],
+                "right_shape": [
+                  8,
+                  31,
+                  1024
+                ],
+                "left_dtype": "torch.float32",
+                "right_dtype": "torch.float32",
+                "left_sha256": "c82126c8221189f1a8a8451adfc512def62c5e498327bc00997a880fe13ef291",
+                "right_sha256": "c82126c8221189f1a8a8451adfc512def62c5e498327bc00997a880fe13ef291",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              }
+            }
+          },
+          {
+            "name": "pep_hlaii.peptide",
+            "sample_count": 8,
+            "bitwise_equal": true,
+            "fields": {
+              "tokens.input_ids": {
+                "left_shape": [
+                  8,
+                  17
+                ],
+                "right_shape": [
+                  8,
+                  17
+                ],
+                "left_dtype": "torch.int64",
+                "right_dtype": "torch.int64",
+                "left_sha256": "5d1c5bc79833b917b9a2d99eec83d310ac0616880103e7493977dd638629b0a4",
+                "right_sha256": "5d1c5bc79833b917b9a2d99eec83d310ac0616880103e7493977dd638629b0a4",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              },
+              "tokens.special_tokens_mask": {
+                "left_shape": [
+                  8,
+                  17
+                ],
+                "right_shape": [
+                  8,
+                  17
+                ],
+                "left_dtype": "torch.int64",
+                "right_dtype": "torch.int64",
+                "left_sha256": "73b727c51b821fece3d46b3e476fe85388a1972212b9c8f7de3c70aa971df034",
+                "right_sha256": "73b727c51b821fece3d46b3e476fe85388a1972212b9c8f7de3c70aa971df034",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              },
+              "tokens.attention_mask": {
+                "left_shape": [
+                  8,
+                  17
+                ],
+                "right_shape": [
+                  8,
+                  17
+                ],
+                "left_dtype": "torch.int64",
+                "right_dtype": "torch.int64",
+                "left_sha256": "0c750e3e0c8b2f17042c3d79fc70dfc516b400296906309c9d45032df4bd4e54",
+                "right_sha256": "0c750e3e0c8b2f17042c3d79fc70dfc516b400296906309c9d45032df4bd4e54",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              },
+              "pooled": {
+                "left_shape": [
+                  8,
+                  1024
+                ],
+                "right_shape": [
+                  8,
+                  1024
+                ],
+                "left_dtype": "torch.float32",
+                "right_dtype": "torch.float32",
+                "left_sha256": "19dcafe00821824b927368c083d21baa423401bb69df7e90b18120624a09a36a",
+                "right_sha256": "19dcafe00821824b927368c083d21baa423401bb69df7e90b18120624a09a36a",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              },
+              "residue": {
+                "left_shape": [
+                  8,
+                  40,
+                  1024
+                ],
+                "right_shape": [
+                  8,
+                  40,
+                  1024
+                ],
+                "left_dtype": "torch.float16",
+                "right_dtype": "torch.float16",
+                "left_sha256": "0114087f5ed88b2836805bc20a01996f385cfe2d521e3ec45a63381cac4abc7b",
+                "right_sha256": "0114087f5ed88b2836805bc20a01996f385cfe2d521e3ec45a63381cac4abc7b",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              },
+              "residue_mask": {
+                "left_shape": [
+                  8,
+                  40
+                ],
+                "right_shape": [
+                  8,
+                  40
+                ],
+                "left_dtype": "torch.bool",
+                "right_dtype": "torch.bool",
+                "left_sha256": "cd584dfc3678a8b27a9153270ce7a08f07b24a338574bc4efb08109ca867fa45",
+                "right_sha256": "cd584dfc3678a8b27a9153270ce7a08f07b24a338574bc4efb08109ca867fa45",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              },
+              "hidden_fp32": {
+                "left_shape": [
+                  8,
+                  17,
+                  1024
+                ],
+                "right_shape": [
+                  8,
+                  17,
+                  1024
+                ],
+                "left_dtype": "torch.float32",
+                "right_dtype": "torch.float32",
+                "left_sha256": "691c17354084db3ede3d7871b72f8019878519f52f3502feab262c540722284c",
+                "right_sha256": "691c17354084db3ede3d7871b72f8019878519f52f3502feab262c540722284c",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              }
+            }
+          },
+          {
+            "name": "pep_hlaii.partner",
+            "sample_count": 8,
+            "bitwise_equal": true,
+            "fields": {
+              "tokens.input_ids": {
+                "left_shape": [
+                  8,
+                  35
+                ],
+                "right_shape": [
+                  8,
+                  35
+                ],
+                "left_dtype": "torch.int64",
+                "right_dtype": "torch.int64",
+                "left_sha256": "2a860499a3aea4f811ae8d6867883334b4903d4bc09e0a2b2c626826b9cc4f22",
+                "right_sha256": "2a860499a3aea4f811ae8d6867883334b4903d4bc09e0a2b2c626826b9cc4f22",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              },
+              "tokens.special_tokens_mask": {
+                "left_shape": [
+                  8,
+                  35
+                ],
+                "right_shape": [
+                  8,
+                  35
+                ],
+                "left_dtype": "torch.int64",
+                "right_dtype": "torch.int64",
+                "left_sha256": "7b5dcf2b01cd0bd9e04163f1c077dd5d00de0863cc78cf796e511a37318b43d1",
+                "right_sha256": "7b5dcf2b01cd0bd9e04163f1c077dd5d00de0863cc78cf796e511a37318b43d1",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              },
+              "tokens.attention_mask": {
+                "left_shape": [
+                  8,
+                  35
+                ],
+                "right_shape": [
+                  8,
+                  35
+                ],
+                "left_dtype": "torch.int64",
+                "right_dtype": "torch.int64",
+                "left_sha256": "766ff8c654df08cfb08c385f6040981da32887aae180d4162107d0dd44e2643d",
+                "right_sha256": "766ff8c654df08cfb08c385f6040981da32887aae180d4162107d0dd44e2643d",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              },
+              "pooled": {
+                "left_shape": [
+                  8,
+                  1024
+                ],
+                "right_shape": [
+                  8,
+                  1024
+                ],
+                "left_dtype": "torch.float32",
+                "right_dtype": "torch.float32",
+                "left_sha256": "2da5fdf79ac25280e03342f204f180a0bc6579a02a805dabf5c3a39ecbe1b27e",
+                "right_sha256": "2da5fdf79ac25280e03342f204f180a0bc6579a02a805dabf5c3a39ecbe1b27e",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              },
+              "residue": {
+                "left_shape": [
+                  8,
+                  40,
+                  1024
+                ],
+                "right_shape": [
+                  8,
+                  40,
+                  1024
+                ],
+                "left_dtype": "torch.float16",
+                "right_dtype": "torch.float16",
+                "left_sha256": "2a4b4274995d35016d0bcc29fca50cc26be6d5aea949de36a93e6cfac9e5a109",
+                "right_sha256": "2a4b4274995d35016d0bcc29fca50cc26be6d5aea949de36a93e6cfac9e5a109",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              },
+              "residue_mask": {
+                "left_shape": [
+                  8,
+                  40
+                ],
+                "right_shape": [
+                  8,
+                  40
+                ],
+                "left_dtype": "torch.bool",
+                "right_dtype": "torch.bool",
+                "left_sha256": "d01e24aa8641ad0f1f663a9b44cc0cf6758413453365d99cffa078f117bffffa",
+                "right_sha256": "d01e24aa8641ad0f1f663a9b44cc0cf6758413453365d99cffa078f117bffffa",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              },
+              "hidden_fp32": {
+                "left_shape": [
+                  8,
+                  35,
+                  1024
+                ],
+                "right_shape": [
+                  8,
+                  35,
+                  1024
+                ],
+                "left_dtype": "torch.float32",
+                "right_dtype": "torch.float32",
+                "left_sha256": "801231c83cb822b491e7f139c0002dfa42fbdd10cc649bef46a5599902148024",
+                "right_sha256": "801231c83cb822b491e7f139c0002dfa42fbdd10cc649bef46a5599902148024",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              }
+            }
+          },
+          {
+            "name": "boundary.normalization_padding_truncation",
+            "sample_count": 5,
+            "bitwise_equal": true,
+            "fields": {
+              "tokens.input_ids": {
+                "left_shape": [
+                  5,
+                  17
+                ],
+                "right_shape": [
+                  5,
+                  17
+                ],
+                "left_dtype": "torch.int64",
+                "right_dtype": "torch.int64",
+                "left_sha256": "232d269cfe441003c67cde08d31a30e29a68899cc0166211eb28756502c8e236",
+                "right_sha256": "232d269cfe441003c67cde08d31a30e29a68899cc0166211eb28756502c8e236",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              },
+              "tokens.special_tokens_mask": {
+                "left_shape": [
+                  5,
+                  17
+                ],
+                "right_shape": [
+                  5,
+                  17
+                ],
+                "left_dtype": "torch.int64",
+                "right_dtype": "torch.int64",
+                "left_sha256": "af2a6c15e24cb922668a5af354d52fca1aadf67cd70292ca770f0948df168e71",
+                "right_sha256": "af2a6c15e24cb922668a5af354d52fca1aadf67cd70292ca770f0948df168e71",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              },
+              "tokens.attention_mask": {
+                "left_shape": [
+                  5,
+                  17
+                ],
+                "right_shape": [
+                  5,
+                  17
+                ],
+                "left_dtype": "torch.int64",
+                "right_dtype": "torch.int64",
+                "left_sha256": "c8e82327de474427e7ccd67b60e48cbbbd57267003cbe4ee79f3c1c977f1e930",
+                "right_sha256": "c8e82327de474427e7ccd67b60e48cbbbd57267003cbe4ee79f3c1c977f1e930",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              },
+              "pooled": {
+                "left_shape": [
+                  5,
+                  1024
+                ],
+                "right_shape": [
+                  5,
+                  1024
+                ],
+                "left_dtype": "torch.float32",
+                "right_dtype": "torch.float32",
+                "left_sha256": "0838a0e14c8258c14f6cdf17629f66bb2f718aca407683a64659f9a1f90c7e6d",
+                "right_sha256": "0838a0e14c8258c14f6cdf17629f66bb2f718aca407683a64659f9a1f90c7e6d",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              },
+              "residue": {
+                "left_shape": [
+                  5,
+                  16,
+                  1024
+                ],
+                "right_shape": [
+                  5,
+                  16,
+                  1024
+                ],
+                "left_dtype": "torch.float16",
+                "right_dtype": "torch.float16",
+                "left_sha256": "0471d997a62cc1778990463f47e0b24766498a9cf9357f1de610048267a1bbce",
+                "right_sha256": "0471d997a62cc1778990463f47e0b24766498a9cf9357f1de610048267a1bbce",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              },
+              "residue_mask": {
+                "left_shape": [
+                  5,
+                  16
+                ],
+                "right_shape": [
+                  5,
+                  16
+                ],
+                "left_dtype": "torch.bool",
+                "right_dtype": "torch.bool",
+                "left_sha256": "8720af64aa28a1fd92a53d9972c74dd3f2a56b8d37a81cbd06848bc7b346aefa",
+                "right_sha256": "8720af64aa28a1fd92a53d9972c74dd3f2a56b8d37a81cbd06848bc7b346aefa",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              },
+              "hidden_fp32": {
+                "left_shape": [
+                  5,
+                  17,
+                  1024
+                ],
+                "right_shape": [
+                  5,
+                  17,
+                  1024
+                ],
+                "left_dtype": "torch.float32",
+                "right_dtype": "torch.float32",
+                "left_sha256": "78c67b4b1f753171131dab7b482dd6e0f0f387d9fc45a9c2e6d98397c52d8fbc",
+                "right_sha256": "78c67b4b1f753171131dab7b482dd6e0f0f387d9fc45a9c2e6d98397c52d8fbc",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              }
+            }
+          },
+          {
+            "name": "boundary.max_length_511",
+            "sample_count": 2,
+            "bitwise_equal": true,
+            "fields": {
+              "tokens.input_ids": {
+                "left_shape": [
+                  2,
+                  512
+                ],
+                "right_shape": [
+                  2,
+                  512
+                ],
+                "left_dtype": "torch.int64",
+                "right_dtype": "torch.int64",
+                "left_sha256": "791a2f12fd6ac021b8668f53334b8be7a064a5823f865938f0a9d243eef0a507",
+                "right_sha256": "791a2f12fd6ac021b8668f53334b8be7a064a5823f865938f0a9d243eef0a507",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              },
+              "tokens.special_tokens_mask": {
+                "left_shape": [
+                  2,
+                  512
+                ],
+                "right_shape": [
+                  2,
+                  512
+                ],
+                "left_dtype": "torch.int64",
+                "right_dtype": "torch.int64",
+                "left_sha256": "60b78107e992e36ca9e268f7b145d3d323b417524376e2139469d7f3fa234cab",
+                "right_sha256": "60b78107e992e36ca9e268f7b145d3d323b417524376e2139469d7f3fa234cab",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              },
+              "tokens.attention_mask": {
+                "left_shape": [
+                  2,
+                  512
+                ],
+                "right_shape": [
+                  2,
+                  512
+                ],
+                "left_dtype": "torch.int64",
+                "right_dtype": "torch.int64",
+                "left_sha256": "bbddeafcfd3170bd6f6ce9e912a0dae026d243f2364b3d76791e06e0881c397c",
+                "right_sha256": "bbddeafcfd3170bd6f6ce9e912a0dae026d243f2364b3d76791e06e0881c397c",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              },
+              "pooled": {
+                "left_shape": [
+                  2,
+                  1024
+                ],
+                "right_shape": [
+                  2,
+                  1024
+                ],
+                "left_dtype": "torch.float32",
+                "right_dtype": "torch.float32",
+                "left_sha256": "1171fd06a78c3de20782588cd8cdd627b8d48885abe07e6b30eaf2c897331c35",
+                "right_sha256": "1171fd06a78c3de20782588cd8cdd627b8d48885abe07e6b30eaf2c897331c35",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              },
+              "residue": {
+                "left_shape": [
+                  2,
+                  511,
+                  1024
+                ],
+                "right_shape": [
+                  2,
+                  511,
+                  1024
+                ],
+                "left_dtype": "torch.float16",
+                "right_dtype": "torch.float16",
+                "left_sha256": "1110f8f39795e6792beb56d6439e599f5134f6e4fdd160ab05075115a9fee9fe",
+                "right_sha256": "1110f8f39795e6792beb56d6439e599f5134f6e4fdd160ab05075115a9fee9fe",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              },
+              "residue_mask": {
+                "left_shape": [
+                  2,
+                  511
+                ],
+                "right_shape": [
+                  2,
+                  511
+                ],
+                "left_dtype": "torch.bool",
+                "right_dtype": "torch.bool",
+                "left_sha256": "4cb772ccf6f29261bc87de0855587f10956bde591f4eb1fc7cf9bf47ccf800a1",
+                "right_sha256": "4cb772ccf6f29261bc87de0855587f10956bde591f4eb1fc7cf9bf47ccf800a1",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              },
+              "hidden_fp32": {
+                "left_shape": [
+                  2,
+                  512,
+                  1024
+                ],
+                "right_shape": [
+                  2,
+                  512,
+                  1024
+                ],
+                "left_dtype": "torch.float32",
+                "right_dtype": "torch.float32",
+                "left_sha256": "023c6af979b052f2b81a8e06e358a206ee39fb4b5afd361199d1b12450e960a1",
+                "right_sha256": "023c6af979b052f2b81a8e06e358a206ee39fb4b5afd361199d1b12450e960a1",
+                "bitwise_equal": true,
+                "different_values": 0,
+                "max_absolute_error": 0.0
+              }
+            }
+          }
+        ],
+        "outputs_equal": true,
+        "finished_at": "2026-11-06T11:14:36.062550+00:00"
+      },
+      "artifact": {
+        "local_path": "backup/model-coldstart-20261106T071747Z/reports/prott5-cu121/report.json",
+        "sha256": "d20c518e027ff131042bfa431cd9634482871d5d1911c325d6539bcb11ddf80a"
+      }
+    },
+    "new_cpu_container_execution": {
+      "status": "PASS",
+      "image_id": "sha256:9d1147ca40d6f135d9533cce39c2980c3a0ab59849848813a0c518299975bcc1",
+      "runtime": {
+        "channel": "cpu",
+        "python_version": "3.10.19",
+        "packages": {
+          "joblib": "1.5.3",
+          "gensim": "4.4.0",
+          "numpy": "2.2.6",
+          "scipy": "1.15.3",
+          "scikit-learn": "1.7.2",
+          "xgboost": "3.1.3",
+          "lightgbm": "4.6.0",
+          "tqdm": "4.67.1",
+          "transformers": "4.48.1",
+          "tokenizers": "0.21.4",
+          "esm": "3.2.0",
+          "sentencepiece": "0.2.1",
+          "huggingface-hub": "0.36.0",
+          "safetensors": "0.7.0",
+          "torch": "2.5.1+cpu",
+          "torchvision": "0.20.1+cpu"
+        },
+        "cuda_runtime_version": null,
+        "cudnn_version": null,
+        "requested_device": "cpu",
+        "device_usable": true,
+        "mismatches": {},
+        "status": "PASS"
+      },
+      "image_source_sha256": {
+        "docker/download_models.py": "3b6e8777f84364a1072d874a131822a94d2e5afa2eb0299b666738d1fb1e6347",
+        "docker/check_runtime.py": "846baff0fc763c814e427370262cc801631fb97dcfa5befd8e5eb963c870af96",
+        "docker/models.lock.json": "93945413afa13c15f06872a79d4325d0c5a78894c714a3afb04282675407ebc5",
+        "docker/prott5.restore.json": "37b912f08cf6b8a12dba725123946c14c849528627411ff32ecb1759d88b75bc",
+        "pepplatform/encoders.py": "73d21f9787e5fe05b9c90c522931d6b3e4205330adf03cafba67a00794567178",
+        "pepplatform/tokenizers.py": "a203078ca3fb48819b270adef6c33c1d078f2fa8454fae5c58c0c5450c8ea3bc",
+        "pepplatform/prott5.py": "f87e6ec522b7e3c91fca013fda9d4a7948a1f10c298d42f59b4eb4a5c2605c0b",
+        "pepplatform/models.py": "89207ded8bc479ca22adaeb8da67af77cb74b8e8d5545527c99daa75a9c5a505",
+        "pepplatform/workflow.py": "116bb50e2d28067d6620195295d4ea7064068bbd1912e90703f29855523ca5cd",
+        "pepplatform/cache_provenance.py": "cd774ad902fde5e1cefdf1056406102aecd8715c8cae2ec467b0d259d5362bd4"
+      },
+      "artifact": "cpu-probe-attempt2-result.json"
+    },
+    "avatar_and_object_storage_removal": {
+      "status": "PASS",
+      "results_per_repository": {
+        "PepPlatform_publish": {
+          "passed": 3,
+          "warnings": 6
+        },
+        "PepPlatform": {
+          "passed": 3,
+          "warnings": 6
+        }
+      },
+      "test_cases": [
+        "tests/test_web_auth.py::test_removed_avatar_routes_return_not_found",
+        "tests/test_web_auth.py::test_profile_response_ignores_legacy_avatar_columns",
+        "tests/test_web_auth.py::test_app_has_no_object_storage_dependency"
+      ],
+      "avatar_api_removed": true,
+      "legacy_avatar_columns_ignored": true,
+      "object_storage_dependency_removed": true,
+      "current_compose_services": [
+        "db",
+        "backend",
+        "frontend"
+      ],
+      "artifact": "garage-removal-checks.json"
+    },
+    "cuda_dependency_comparison": {
+      "status": "PASS",
+      "reference": {
+        "triton": "3.1.0",
+        "nvidia-cublas-cu12": "12.1.3.1",
+        "nvidia-cuda-runtime-cu12": "12.1.105",
+        "nvidia-cudnn-cu12": "9.1.0.70",
+        "nvidia-nvjitlink-cu12": "12.9.86",
+        "nvidia-cusolver-cu12": "11.4.5.107",
+        "nvidia-cufft-cu12": "11.0.2.54",
+        "nvidia-nvtx-cu12": "12.1.105",
+        "nvidia-curand-cu12": "10.3.2.106",
+        "nvidia-cusparse-cu12": "12.1.0.106",
+        "nvidia-nccl-cu12": "2.21.5",
+        "nvidia-cuda-nvrtc-cu12": "12.1.105",
+        "nvidia-cuda-cupti-cu12": "12.1.105"
+      },
+      "formal_gpu_image": {
+        "nvidia-curand-cu12": "10.3.2.106",
+        "nvidia-nvjitlink-cu12": "12.9.86",
+        "nvidia-nvtx-cu12": "12.1.105",
+        "nvidia-cusolver-cu12": "11.4.5.107",
+        "nvidia-nccl-cu12": "2.21.5",
+        "triton": "3.1.0",
+        "nvidia-cusparse-cu12": "12.1.0.106",
+        "nvidia-cuda-runtime-cu12": "12.1.105",
+        "nvidia-cuda-nvrtc-cu12": "12.1.105",
+        "nvidia-cublas-cu12": "12.1.3.1",
+        "nvidia-cudnn-cu12": "9.1.0.70",
+        "nvidia-cufft-cu12": "11.0.2.54",
+        "nvidia-cuda-cupti-cu12": "12.1.105"
+      },
+      "image_id": "sha256:42fa5ab1dc6ea83e02bc4eaecd60abfa6cc2f8578f05ab575f906fa046abaaca",
+      "mismatches": {}
+    },
+    "six_checkpoint_offline_gpu_loading": {
+      "status": "PASS",
+      "image_id": "sha256:42fa5ab1dc6ea83e02bc4eaecd60abfa6cc2f8578f05ab575f906fa046abaaca",
+      "network_mode": "none",
+      "artifact": "gpu-smoke-result.json",
+      "error": null
+    },
+    "six_checkpoint_offline_cpu_loading": {
+      "status": "PASS",
+      "image_id": "sha256:9d1147ca40d6f135d9533cce39c2980c3a0ab59849848813a0c518299975bcc1",
+      "network_mode": "none",
+      "artifact": "cpu-smoke-result.json",
+      "error": null
+    },
+    "idempotent_preparation": {
+      "status": "PASS",
+      "image_id": "sha256:42fa5ab1dc6ea83e02bc4eaecd60abfa6cc2f8578f05ab575f906fa046abaaca",
+      "network_mode": "host with configured loopback proxy",
+      "artifact": "reuse-result.json",
+      "error": null,
+      "model_file_metadata_unchanged": true,
+      "verified_reuse_count": 6
+    }
+  },
+  "host_change_state": {
+    "status": "PASS",
+    "approved_scope": "User selected complete host repair plus GPU verification and requested implementation.",
+    "toolkit_version": "1.20.1-1",
+    "driver_before": "535.183.01",
+    "driver_after": "535.183.01",
+    "daemon_proxy": "http://127.0.0.1:9981",
+    "runtime_names": [
+      "io.containerd.runc.v2",
+      "nvidia",
+      "runc"
+    ],
+    "gpu_container_probe": "NVIDIA GeForce RTX 3090, 535.183.01, 24576 MiB",
+    "garage_required_by_current_project": false,
+    "garage_restart_required": false,
+    "garage_recovered": false,
+    "host_configuration_backups": {
+      "local_path": "backup/model-coldstart-20261106T071747Z/host-change/host-backup.json",
+      "sha256": "db261cc9d55cd6ad00764666d6457ad683444f47822b386a313d7bbaf750ec70"
+    },
+    "container_or_data_volume_deletion_performed": false
+  },
+  "artifacts": {
+    "initial-state.json": {
+      "local_path": "backup/model-coldstart-20261106T071747Z/initial-state.json",
+      "sha256": "b85c3e6520d4a385c0ada18555e07065dc15194492e1074a9207918557fc63cb"
+    },
+    "fresh-runtime-attempt4.json": {
+      "local_path": "backup/model-coldstart-20261106T071747Z/fresh-runtime-attempt4.json",
+      "sha256": "c90c6436624dce4f74339d2515f074b4e0d08a6d782e64ddf026bef6baa4cdf6"
+    },
+    "host-change/host-install-result.json": {
+      "local_path": "backup/model-coldstart-20261106T071747Z/host-change/host-install-result.json",
+      "sha256": "7b4f5eecb5726fd8d8063e021a78618e6da13588214bb85e52ea9f45aeddf9c0"
+    },
+    "host-change/host-restart-result.json": {
+      "local_path": "backup/model-coldstart-20261106T071747Z/host-change/host-restart-result.json",
+      "sha256": "9844110162a927e160e3f27476177972c7d896bffb587938a8f1c0bcad5bc67d"
+    },
+    "base-cache-curl-result.json": {
+      "local_path": "backup/model-coldstart-20261106T071747Z/base-cache-curl-result.json",
+      "sha256": "f9dfaf913a7cd8c6e2e964879572237cb40939dd9bebb8979f926d911a9edaef"
+    },
+    "tls-regression-tests.json": {
+      "local_path": "backup/model-coldstart-20261106T071747Z/tls-regression-tests.json",
+      "sha256": "8b4b247d1ead5eea105d25a6eaf3ff3c2a2093df34a814e9575b7293e9d383cc"
+    },
+    "cuda-dependencies-comparison.json": {
+      "local_path": "backup/model-coldstart-20261106T071747Z/cuda-dependencies-comparison.json",
+      "sha256": "7d5fb22deffae10487c67654acc7c27c7d2e7cdd92d6b01b4830f17c37012d12"
+    },
+    "frozen-reference-mounts.json": {
+      "local_path": "backup/model-coldstart-20261106T071747Z/frozen-reference-mounts.json",
+      "sha256": "c498761fe9ac1404ea450a749cfb555c0eab82dbdfc69d4b9a860acca31637f8"
+    },
+    "formal-images.json": {
+      "local_path": "backup/model-coldstart-20261106T071747Z/formal-images.json",
+      "sha256": "5535ba0c582851a745d33bc08c7b69cf9c86d05f838790831cceb53baf46ee61"
+    },
+    "pipeline-progress.json": {
+      "local_path": "backup/model-coldstart-20261106T071747Z/pipeline-progress.json",
+      "sha256": "03bbb949da85d20ae5e8007033ca3d8c14e23061f2ec1e03247285b51571b877"
+    },
+    "cold-download-result.json": {
+      "local_path": "backup/model-coldstart-20261106T071747Z/cold-download-result.json",
+      "sha256": "211d1d7812a0a8e03e5f084a6c0826103b51c7c84e2303965575f63808ecd34d"
+    },
+    "gpu-smoke-result.json": {
+      "local_path": "backup/model-coldstart-20261106T071747Z/gpu-smoke-result.json",
+      "sha256": "57f94a9cfae55cf5becc5c7dc50de09c23fab3f997cc13d066a3de4550d6d77f"
+    },
+    "cpu-smoke-result.json": {
+      "local_path": "backup/model-coldstart-20261106T071747Z/cpu-smoke-result.json",
+      "sha256": "f122e8228a55385ac4143c4f47cfe7e0ed5583af0e6c463c4b6223e769a8a6a7"
+    },
+    "gpu-probe-attempt2-result.json": {
+      "local_path": "backup/model-coldstart-20261106T071747Z/gpu-probe-attempt2-result.json",
+      "sha256": "0d310a41e0750865733a81f4f930d16215ff329451de8f26cc05b48eb598f04e"
+    },
+    "build-cu121-attempt2-result.json": {
+      "local_path": "backup/model-coldstart-20261106T071747Z/build-cu121-attempt2-result.json",
+      "sha256": "2ffed0a27c37a7341456fa7053af971467b7a46dfbe12cb3e0b9133a77c57d49"
+    },
+    "gpu-probe-result.json": {
+      "local_path": "backup/model-coldstart-20261106T071747Z/gpu-probe-result.json",
+      "sha256": "279d5ac301c2564565028457290e0618c0e62609b52d2e0c587c750082e2ab7e"
+    },
+    "cpu-audit-result.json": {
+      "local_path": "backup/model-coldstart-20261106T071747Z/cpu-audit-result.json",
+      "sha256": "e2a2c4a1a523d0b22eaf3d7b5cb1030d6000e7643b23eeab8cd73a3dffedfec7"
+    },
+    "cold-download-attempt3-result.json": {
+      "local_path": "backup/model-coldstart-20261106T071747Z/cold-download-attempt3-result.json",
+      "sha256": "30db9ad52a248c9ae8126e5a2f71e1fd04a8d5b3dee33a5ef03a843a8ee5d430"
+    },
+    "host-admin-result.json": {
+      "local_path": "backup/model-coldstart-20261106T071747Z/host-admin-result.json",
+      "sha256": "541b6066f9d3c0e7202a7329b9fa22d46da1d0d40aa81f7f5e551bd75cf5af17"
+    },
+    "cpu-probe-attempt2-result.json": {
+      "local_path": "backup/model-coldstart-20261106T071747Z/cpu-probe-attempt2-result.json",
+      "sha256": "fb0e00bc7fa6ad5b529c5594ed3af471b65fd6fd5e8bb2385ae68d66fa115795"
+    },
+    "cpu-probe-result.json": {
+      "local_path": "backup/model-coldstart-20261106T071747Z/cpu-probe-result.json",
+      "sha256": "a4cc58876d94e0999107f2b41c50a92cead904faec0921519db406defb02c104"
+    },
+    "base-cache-result.json": {
+      "local_path": "backup/model-coldstart-20261106T071747Z/base-cache-result.json",
+      "sha256": "bb5dcd90ad1bde51adc0207ac84c66d81703683841c3e77898cda889dd49e63a"
+    },
+    "build-cu121-result.json": {
+      "local_path": "backup/model-coldstart-20261106T071747Z/build-cu121-result.json",
+      "sha256": "87b4d4d2a64cf2dd2a2ce099cf3df1e329e94d51c76ee82a2affa1d66a80e71a"
+    },
+    "gpu-audit-result.json": {
+      "local_path": "backup/model-coldstart-20261106T071747Z/gpu-audit-result.json",
+      "sha256": "b3602ab613f1fcf4d29a2368c5d5637e079658fb7a956ae01769f2b2bc611c11"
+    },
+    "cold-download-attempt2-result.json": {
+      "local_path": "backup/model-coldstart-20261106T071747Z/cold-download-attempt2-result.json",
+      "sha256": "37b25b21ee3c71460a4725a04e174af93bf63261030e2a9c3df371290695bcab"
+    },
+    "package-mirror-result.json": {
+      "local_path": "backup/model-coldstart-20261106T071747Z/package-mirror-result.json",
+      "sha256": "d22ec9589f475c826f29c5739574c34c87f6a10eebf32c92cb99f6ef07db2643"
+    },
+    "build-cu121-attempt3-result.json": {
+      "local_path": "backup/model-coldstart-20261106T071747Z/build-cu121-attempt3-result.json",
+      "sha256": "1cd000e90b87a39b87a782fa86540df65cbc8d213da13d3fe310037d93f5f1f7"
+    },
+    "build-cu121-attempt5-result.json": {
+      "local_path": "backup/model-coldstart-20261106T071747Z/build-cu121-attempt5-result.json",
+      "sha256": "a357ce9596723339e38089f4a61e9c75813af824491cd0d7b0067c6053dced0e"
+    },
+    "build-cu121-attempt4-result.json": {
+      "local_path": "backup/model-coldstart-20261106T071747Z/build-cu121-attempt4-result.json",
+      "sha256": "e1e59581b89fb8c3ff871710cdba994ad493fccb62a790e966ef0d492c0aca33"
+    },
+    "cold-download-attempt4-result.json": {
+      "local_path": "backup/model-coldstart-20261106T071747Z/cold-download-attempt4-result.json",
+      "sha256": "9264ea22eef6beac227c1d05a6ac23ebafb81557cbb25b51224b166c4d27a296"
+    },
+    "build-cpu-attempt2-result.json": {
+      "local_path": "backup/model-coldstart-20261106T071747Z/build-cpu-attempt2-result.json",
+      "sha256": "16075580bb3aef0545e4baa7bbd4269c5c75f326c734874fe00792bcbb3394d9"
+    },
+    "reuse-result.json": {
+      "local_path": "backup/model-coldstart-20261106T071747Z/reuse-result.json",
+      "sha256": "a84c918365ace23a7aa920ae066648033161c0c2a63a501bbc04beee24b849ba"
+    },
+    "build-cpu-result.json": {
+      "local_path": "backup/model-coldstart-20261106T071747Z/build-cpu-result.json",
+      "sha256": "683f89b47cb1826edd78504d5e13d8050d04583ae2f85432ea0698cf803318e0"
+    },
+    "build-cpu-tmux-launch.json": {
+      "local_path": "backup/model-coldstart-20261106T071747Z/build-cpu-tmux-launch.json",
+      "sha256": "28d610ffdd75722e7146507aa35e7bb366339e52d8b3c79c7b5aa19a033a2d38"
+    },
+    "build-cu121-tmux-launch.json": {
+      "local_path": "backup/model-coldstart-20261106T071747Z/build-cu121-tmux-launch.json",
+      "sha256": "95379047673bfb164571f4004872d8eda2071f430cf3af8f2d5422065745098c"
+    },
+    "cache-base-tmux-launch.json": {
+      "local_path": "backup/model-coldstart-20261106T071747Z/cache-base-tmux-launch.json",
+      "sha256": "1ac4ed649085fde26f9d972f95690c70c4c47272f8efbf111f75c7a3951f50a7"
+    },
+    "complete-validation-attempt3-tmux-launch.json": {
+      "local_path": "backup/model-coldstart-20261106T071747Z/complete-validation-attempt3-tmux-launch.json",
+      "sha256": "cf556b0742bc042ab5a273081a3b6682f74723f599a4ae27b8249953871e436c"
+    },
+    "complete-validation-tmux-launch.json": {
+      "local_path": "backup/model-coldstart-20261106T071747Z/complete-validation-tmux-launch.json",
+      "sha256": "b7283334657e960993e66b2e9e1b2ade344ad6fc168c01b9592e2003b7c66677"
+    },
+    "host-install-tmux-launch.json": {
+      "local_path": "backup/model-coldstart-20261106T071747Z/host-install-tmux-launch.json",
+      "sha256": "d5fdac42f9273731500cbba5327583e372dce398a86c2708af1ccf69d32e1c7f"
+    },
+    "final-validation-tmux-launch.json": {
+      "local_path": "backup/model-coldstart-20261106T071747Z/final-validation-tmux-launch.json",
+      "sha256": "b1b5ad6bbf578f461230a9311863abc69e29dfcec45888ff74afd66d5a504ea5"
+    },
+    "build-cu121-attempt2-tmux-launch.json": {
+      "local_path": "backup/model-coldstart-20261106T071747Z/build-cu121-attempt2-tmux-launch.json",
+      "sha256": "d90563821a590085dab7b5616ae31a1753ab7b73a81a57e47f386fe3d6e38fe1"
+    },
+    "package-mirror-tmux-launch.json": {
+      "local_path": "backup/model-coldstart-20261106T071747Z/package-mirror-tmux-launch.json",
+      "sha256": "941d368bb9b661773031541d0f1d0c0bdfbe110aa606111ccdf0c772b0a75e6e"
+    },
+    "cache-base-curl-tmux-launch.json": {
+      "local_path": "backup/model-coldstart-20261106T071747Z/cache-base-curl-tmux-launch.json",
+      "sha256": "e3d09fa0b3b76df49df5868771130601998f622657e33c8819a8297711cd5304"
+    },
+    "validation-pipeline-attempt3-tmux-launch.json": {
+      "local_path": "backup/model-coldstart-20261106T071747Z/validation-pipeline-attempt3-tmux-launch.json",
+      "sha256": "9901cd7773bce106360fa835e340edc788d4d76111e360e21a112c9bf0e0c85b"
+    },
+    "cold-download-attempt2-tmux-launch.json": {
+      "local_path": "backup/model-coldstart-20261106T071747Z/cold-download-attempt2-tmux-launch.json",
+      "sha256": "ee9cdc7c9bc494902d1ca38f2d4237df77f6262db1837135c62bd05c3e8499fc"
+    },
+    "validation-pipeline-tmux-launch.json": {
+      "local_path": "backup/model-coldstart-20261106T071747Z/validation-pipeline-tmux-launch.json",
+      "sha256": "f3f1663d64e65fe9b2aa1f4eab65716581e29bfa0782e39a10f8fe01c942cb20"
+    },
+    "build-cu121-attempt3-tmux-launch.json": {
+      "local_path": "backup/model-coldstart-20261106T071747Z/build-cu121-attempt3-tmux-launch.json",
+      "sha256": "caa36718ec75626907e8c3c1f936875575b5e13869b2ac3233779e104d99ed2d"
+    },
+    "validation-pipeline-attempt4-tmux-launch.json": {
+      "local_path": "backup/model-coldstart-20261106T071747Z/validation-pipeline-attempt4-tmux-launch.json",
+      "sha256": "2c7b77ccd7f93082e85a3c3d8daf764080e66bd3d8dbfe4c16e1343e5ee3a527"
+    },
+    "cold-download-attempt3-tmux-launch.json": {
+      "local_path": "backup/model-coldstart-20261106T071747Z/cold-download-attempt3-tmux-launch.json",
+      "sha256": "7dae6d90f6e226aec139aa6cc718149402a19690ce7e397b2b71b2c05d0788a3"
+    },
+    "build-cu121-attempt4-tmux-launch.json": {
+      "local_path": "backup/model-coldstart-20261106T071747Z/build-cu121-attempt4-tmux-launch.json",
+      "sha256": "2e2526d04901b4df740a16771bd80af61a643b817e7e54a8370104365f70157e"
+    }
+  },
+  "limitations": [
+    "Model preparation and short training comparisons do not constitute full 100-candidate retraining.",
+    "CPU and GPU numerical results are evaluated within each device profile; cross-device bitwise identity is not asserted.",
+    "This host needed documented proxy/TLS compatibility and a verified exact base-image cache. Other servers need their own working network and gated-repository access.",
+    "The full documentation checker retains pre-existing translation/version-check errors."
+  ],
+  "updated_at": "2026-11-06T11:36:34.006640+00:00",
+  "run_directory": "backup/model-coldstart-20261106T071747Z",
+  "previous_validation_record": {
+    "local_path": "backup/model-coldstart-20261106T071747Z/reports/previous-public-validation.json",
+    "sha256": "98d7d6d12396971f13bc5e237e4e609bdfcb8c1ac802c1e9e0f46f612153e015"
+  },
+  "historical_prott5_cpu_check": {
+    "status": "PASS",
+    "device": "cpu",
+    "scope": "Original versus previously restored exact shards; existing official and restored assets reused. Not a cold download or a newly built CPU image check.",
+    "fresh_download": false,
+    "new_cpu_image": false,
+    "files_match_lock": true,
+    "verified_file_count": 13,
+    "identity_validation_passed": true,
+    "loaded_encoder_state_equal": true,
+    "rng_equal": true,
+    "classifier_initialization_equal": true,
+    "synthetic_training_equal": true,
+    "synthetic_training_steps": 3,
+    "synthetic_losses": {
+      "original": [
+        0.6838986277580261,
+        0.5943281054496765,
+        0.49796316027641296
+      ],
+      "restored": [
+        0.6838986277580261,
+        0.5943281054496765,
+        0.49796316027641296
+      ]
+    },
+    "outputs_equal": true,
+    "probe_count": 9,
+    "sequence_count": 63,
+    "all_outputs_bitwise_equal": true,
+    "artifact": "cpu-prott5-verification/report.json"
+  },
+  "download_sources": {
+    "defaults": {
+      "pypi": "https://pypi.org/simple",
+      "torch_base": "https://download.pytorch.org/whl",
+      "huggingface": "https://huggingface.co"
+    },
+    "supported_china_options": {
+      "PEP_PIP_INDEX_URL": "https://pypi.tuna.tsinghua.edu.cn/simple",
+      "PEP_TORCH_INDEX_BASE_URL": "https://mirrors.nju.edu.cn/pytorch/whl",
+      "HF_ENDPOINT": "https://hf-mirror.com"
+    },
+    "this_run_build_cache": {
+      "status": "RUNNING",
+      "started_at": "2026-11-06T09:03:52.263543+00:00",
+      "port": 36911,
+      "pip_index_url": "http://127.0.0.1:36911/simple",
+      "torch_index_base_url": "http://127.0.0.1:36911/pytorch/whl",
+      "upstream_pypi": "https://pypi.tuna.tsinghua.edu.cn/simple",
+      "upstream_torch": "https://mirrors.nju.edu.cn/pytorch/whl",
+      "preserved_wheel_count": 13,
+      "scope": "Build dependency cache only; zero pretrained model files or Hugging Face caches are served."
+    },
+    "mirror_benchmarks": [
+      {
+        "name": "sjtu_torch",
+        "exit_code": 0,
+        "http": "206",
+        "bytes": 1048576,
+        "speed_bytes_per_second": "1579180.000",
+        "seconds": "0.664719",
+        "final_host": "s3.jcloud.sjtu.edu.cn",
+        "error_type": null,
+        "first_bytes_hex": "504b03040a000000"
+      },
+      {
+        "name": "nju_torch",
+        "exit_code": 0,
+        "http": "206",
+        "bytes": 1048576,
+        "speed_bytes_per_second": "3256447.000",
+        "seconds": "0.322719",
+        "final_host": "mirrors.nju.edu.cn",
+        "error_type": null,
+        "first_bytes_hex": "504b03040a000000"
+      },
+      {
+        "name": "official_pytorch",
+        "exit_code": 0,
+        "http": "206",
+        "bytes": 1048576,
+        "speed_bytes_per_second": "180477.000",
+        "seconds": "5.810926",
+        "final_host": "download-r2.pytorch.org",
+        "error_type": null,
+        "first_bytes_hex": "504b03040a000000"
+      },
+      {
+        "name": "hf_official_prott5",
+        "exit_code": 0,
+        "http": "206",
+        "bytes": 1048576,
+        "speed_bytes_per_second": "203606.000",
+        "seconds": "5.150081",
+        "final_host": "us.aws.cdn.hf.co",
+        "error_type": null,
+        "first_bytes_hex": "504b030400000808"
+      },
+      {
+        "name": "hf_mirror_prott5",
+        "exit_code": 0,
+        "http": "206",
+        "bytes": 1048576,
+        "speed_bytes_per_second": "178693.000",
+        "seconds": "5.868327",
+        "final_host": "us.aws.cdn.hf.co",
+        "error_type": null,
+        "first_bytes_hex": "504b030400000808"
+      }
+    ],
+    "benchmark_scope": "Only 1 MiB range probes; not a sustained-throughput guarantee. The ProtT5 mirror and official probe redirected to the same CDN. HF credentials were not sent to the mirror."
+  },
+  "acceptance_required_checks": [
+    "new_gpu_container_execution",
+    "new_cpu_container_execution",
+    "six_checkpoint_default_cold_download",
+    "six_checkpoint_offline_gpu_loading",
+    "six_checkpoint_offline_cpu_loading",
+    "prott5_gpu_restoration_comparison",
+    "prott5_cpu_restoration_comparison",
+    "idempotent_preparation",
+    "cuda_dependency_comparison",
+    "regression_tests",
+    "final_source_lint_links_and_sync"
+  ],
+  "non_blocking_preexisting_check": "docs_site_full_source_check"
+}

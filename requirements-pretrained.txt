@@ -1,0 +1,11 @@
+-r requirements.txt
+
+# Compatible with esm==3.2.0 and the platform's tokenizers==0.21.4 contract.
+transformers==4.48.1
+sentencepiece==0.2.1
+huggingface-hub==0.36.0
+safetensors==0.7.0
+protobuf>=4.25,<8
+esm==3.2.0
+# Match torch==2.5.1; this is also an ESM SDK dependency.
+torchvision==0.20.1

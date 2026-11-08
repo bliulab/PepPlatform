@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "task": "pep_function",
+  "source": "dbaasp",
+  "query": {"id.value": "36"},
+  "page_size": 20,
+  "max_records": 10000,
+  "peptide_length": [5, 50],
+  "labels": [{
+    "name": "ABP_Ecoli_MIC",
+    "target_species": "Escherichia coli",
+    "measure": "MIC",
+    "unit": "µM",
+    "positive_max": 8,
+    "negative_min": 64
+  }],
+  "split": {"seed": 42, "ratios": [80, 10, 10]}
+}

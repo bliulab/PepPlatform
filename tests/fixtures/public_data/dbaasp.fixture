@@ -1,0 +1,815 @@
+{
+  "retrieved": "2026-09-28",
+  "source_url": "https://dbaasp.org/peptides/36",
+  "note": "Selected original response fields; no scientific values altered. Not a training dataset.",
+  "record": {
+    "CTerminus": null,
+    "NTerminus": null,
+    "articles": [
+      {
+        "additional": "",
+        "authors": [
+          {
+            "description": "",
+            "name": "Batista CV"
+          },
+          {
+            "description": "",
+            "name": "Scaloni A"
+          },
+          {
+            "description": "",
+            "name": "Rigden DJ"
+          },
+          {
+            "description": "",
+            "name": "Silva LR"
+          },
+          {
+            "description": "",
+            "name": "Rodrigues Romero A"
+          },
+          {
+            "description": "",
+            "name": "Dukor R"
+          },
+          {
+            "description": "",
+            "name": "Sebben A"
+          },
+          {
+            "description": "",
+            "name": "Talamo F"
+          },
+          {
+            "description": "",
+            "name": "Bloch C"
+          }
+        ],
+        "id": 76,
+        "journal": {
+          "description": "FEBS LETTERS",
+          "name": "FEBS Lett"
+        },
+        "pages": "85-89",
+        "pubmed": {
+          "pubmedId": "11297740",
+          "pubmedUrl": "http://www.ncbi.nlm.nih.gov/pubmed/11297740"
+        },
+        "title": "A novel heterodimeric antimicrobial peptide from the tree-frog Phyllomedusa distincta",
+        "volume": "494",
+        "year": 2001
+      },
+      {
+        "additional": "",
+        "authors": [
+          {
+            "description": "",
+            "name": "Dalla Serra M"
+          },
+          {
+            "description": "",
+            "name": "Cirioni O"
+          },
+          {
+            "description": "",
+            "name": "Vitale RM"
+          },
+          {
+            "description": "",
+            "name": "Renzone G"
+          },
+          {
+            "description": "",
+            "name": "Coraiola M"
+          },
+          {
+            "description": "",
+            "name": "Giacometti A"
+          },
+          {
+            "description": "",
+            "name": "Potrich C"
+          },
+          {
+            "description": "",
+            "name": "Baroni E"
+          },
+          {
+            "description": "",
+            "name": "Guella G"
+          },
+          {
+            "description": "",
+            "name": "Sanseverino M"
+          },
+          {
+            "description": "",
+            "name": "De Luca S"
+          },
+          {
+            "description": "",
+            "name": "Scalise G"
+          },
+          {
+            "description": "",
+            "name": "Amodeo P"
+          },
+          {
+            "description": "",
+            "name": "Scaloni A"
+          }
+        ],
+        "id": 10806,
+        "journal": {
+          "description": "",
+          "name": "Biochemistry"
+        },
+        "pages": "7888-7899",
+        "pubmed": {
+          "pubmedId": "18597491",
+          "pubmedUrl": "http://www.ncbi.nlm.nih.gov/pubmed/18597491"
+        },
+        "title": "Structural features of distinctin affecting peptide biological and biochemical properties.",
+        "volume": "47",
+        "year": 2008
+      }
+    ],
+    "cTerminus": null,
+    "complexity": {
+      "name": "Monomer"
+    },
+    "coordinationBonds": [],
+    "id": 36,
+    "interchainBonds": [],
+    "intrachainBonds": [],
+    "nTerminus": null,
+    "sequence": "NLVSGLIEARKYLEQLHRKLKNCKV",
+    "synergies": [],
+    "targetActivities": [
+      {
+        "activity": 64.09141,
+        "activityMeasureGroup": {
+          "name": "MIC"
+        },
+        "activityMeasureValue": "MIC",
+        "cfu": "5E5",
+        "cfuGroup": {
+          "name": "1E5 - 1E6"
+        },
+        "concentration": "1.35-21.67",
+        "id": 66592,
+        "ionicStrength": "",
+        "medium": {
+          "description": "Mueller Hinton Broth",
+          "name": "MHB"
+        },
+        "note": "10 Clinical isolates",
+        "peptideId": 36,
+        "ph": "",
+        "reference": "2",
+        "saltType": "",
+        "targetSpecies": {
+          "name": "Escherichia coli"
+        },
+        "unit": {
+          "description": "",
+          "name": "µM"
+        }
+      },
+      {
+        "activity": 128.18282,
+        "activityMeasureGroup": {
+          "name": "MBC"
+        },
+        "activityMeasureValue": "MBC",
+        "cfu": "5E5",
+        "cfuGroup": {
+          "name": "1E5 - 1E6"
+        },
+        "concentration": "2.71-43.34",
+        "id": 66595,
+        "ionicStrength": "",
+        "medium": {
+          "description": "Mueller Hinton Broth",
+          "name": "MHB"
+        },
+        "note": "10 Clinical isolates",
+        "peptideId": 36,
+        "ph": "",
+        "reference": "2",
+        "saltType": "",
+        "targetSpecies": {
+          "name": "Escherichia coli"
+        },
+        "unit": {
+          "description": "",
+          "name": "µM"
+        }
+      },
+      {
+        "activity": 128.18282,
+        "activityMeasureGroup": {
+          "name": "MIC"
+        },
+        "activityMeasureValue": "MIC",
+        "cfu": "5E5",
+        "cfuGroup": {
+          "name": "1E5 - 1E6"
+        },
+        "concentration": "1.35-43.34",
+        "id": 66598,
+        "ionicStrength": "",
+        "medium": {
+          "description": "Mueller Hinton Broth",
+          "name": "MHB"
+        },
+        "note": "10 Clinical isolates",
+        "peptideId": 36,
+        "ph": "",
+        "reference": "2",
+        "saltType": "",
+        "targetSpecies": {
+          "description": "",
+          "name": "Klebsiella pneumoniae"
+        },
+        "unit": {
+          "description": "",
+          "name": "µM"
+        }
+      },
+      {
+        "activity": 128.18282,
+        "activityMeasureGroup": {
+          "name": "MBC"
+        },
+        "activityMeasureValue": "MBC",
+        "cfu": "5E5",
+        "cfuGroup": {
+          "name": "1E5 - 1E6"
+        },
+        "concentration": "2.71-43.34",
+        "id": 66601,
+        "ionicStrength": "",
+        "medium": {
+          "description": "Mueller Hinton Broth",
+          "name": "MHB"
+        },
+        "note": "10 Clinical isolates",
+        "peptideId": 36,
+        "ph": "",
+        "reference": "2",
+        "saltType": "",
+        "targetSpecies": {
+          "description": "",
+          "name": "Klebsiella pneumoniae"
+        },
+        "unit": {
+          "description": "",
+          "name": "µM"
+        }
+      },
+      {
+        "activity": 128.18282,
+        "activityMeasureGroup": {
+          "name": "MIC"
+        },
+        "activityMeasureValue": "MIC",
+        "cfu": "5E5",
+        "cfuGroup": {
+          "name": "1E5 - 1E6"
+        },
+        "concentration": "2.71-43.34",
+        "id": 66604,
+        "ionicStrength": "",
+        "medium": {
+          "description": "Mueller Hinton Broth",
+          "name": "MHB"
+        },
+        "note": "10 Clinical isolates",
+        "peptideId": 36,
+        "ph": "",
+        "reference": "2",
+        "saltType": "",
+        "targetSpecies": {
+          "name": "Serratia marcescens"
+        },
+        "unit": {
+          "description": "",
+          "name": "µM"
+        }
+      },
+      {
+        "activity": 256.36563,
+        "activityMeasureGroup": {
+          "name": "MBC"
+        },
+        "activityMeasureValue": "MBC",
+        "cfu": "5E5",
+        "cfuGroup": {
+          "name": "1E5 - 1E6"
+        },
+        "concentration": "2.71-86.68",
+        "id": 66607,
+        "ionicStrength": "",
+        "medium": {
+          "description": "Mueller Hinton Broth",
+          "name": "MHB"
+        },
+        "note": "10 Clinical isolates",
+        "peptideId": 36,
+        "ph": "",
+        "reference": "2",
+        "saltType": "",
+        "targetSpecies": {
+          "name": "Serratia marcescens"
+        },
+        "unit": {
+          "description": "",
+          "name": "µM"
+        }
+      },
+      {
+        "activity": 128.18282,
+        "activityMeasureGroup": {
+          "name": "MIC"
+        },
+        "activityMeasureValue": "MIC",
+        "cfu": "5E5",
+        "cfuGroup": {
+          "name": "1E5 - 1E6"
+        },
+        "concentration": "5.42-43.34",
+        "id": 66610,
+        "ionicStrength": "",
+        "medium": {
+          "description": "Mueller Hinton Broth",
+          "name": "MHB"
+        },
+        "note": "8 Clinical isolates",
+        "peptideId": 36,
+        "ph": "",
+        "reference": "2",
+        "saltType": "",
+        "targetSpecies": {
+          "name": "Stenotrophomonas maltophilia"
+        },
+        "unit": {
+          "description": "",
+          "name": "µM"
+        }
+      },
+      {
+        "activity": 256.36563,
+        "activityMeasureGroup": {
+          "name": "MBC"
+        },
+        "activityMeasureValue": "MBC",
+        "cfu": "5E5",
+        "cfuGroup": {
+          "name": "1E5 - 1E6"
+        },
+        "concentration": "5.42-86.68",
+        "id": 66611,
+        "ionicStrength": "",
+        "medium": {
+          "description": "Mueller Hinton Broth",
+          "name": "MHB"
+        },
+        "note": "8 Clinical isolates",
+        "peptideId": 36,
+        "ph": "",
+        "reference": "2",
+        "saltType": "",
+        "targetSpecies": {
+          "name": "Stenotrophomonas maltophilia"
+        },
+        "unit": {
+          "description": "",
+          "name": "µM"
+        }
+      },
+      {
+        "activity": 128.18282,
+        "activityMeasureGroup": {
+          "name": "MIC"
+        },
+        "activityMeasureValue": "MIC",
+        "cfu": "5E5",
+        "cfuGroup": {
+          "name": "1E5 - 1E6"
+        },
+        "concentration": "5.42-43.34",
+        "id": 66612,
+        "ionicStrength": "",
+        "medium": {
+          "description": "Mueller Hinton Broth",
+          "name": "MHB"
+        },
+        "note": "8 Clinical isolates",
+        "peptideId": 36,
+        "ph": "",
+        "reference": "2",
+        "saltType": "",
+        "targetSpecies": {
+          "name": "Acinetobacter baumannii"
+        },
+        "unit": {
+          "description": "",
+          "name": "µM"
+        }
+      },
+      {
+        "activity": 256.36563,
+        "activityMeasureGroup": {
+          "name": "MBC"
+        },
+        "activityMeasureValue": "MBC",
+        "cfu": "5E5",
+        "cfuGroup": {
+          "name": "1E5 - 1E6"
+        },
+        "concentration": "5.42-86.68",
+        "id": 66613,
+        "ionicStrength": "",
+        "medium": {
+          "description": "Mueller Hinton Broth",
+          "name": "MHB"
+        },
+        "note": "8 Clinical isolates",
+        "peptideId": 36,
+        "ph": "",
+        "reference": "2",
+        "saltType": "",
+        "targetSpecies": {
+          "name": "Acinetobacter baumannii"
+        },
+        "unit": {
+          "description": "",
+          "name": "µM"
+        }
+      },
+      {
+        "activity": 256.36563,
+        "activityMeasureGroup": {
+          "name": "MIC"
+        },
+        "activityMeasureValue": "MIC",
+        "cfu": "5E5",
+        "cfuGroup": {
+          "name": "1E5 - 1E6"
+        },
+        "concentration": "5.42-86.68",
+        "id": 66614,
+        "ionicStrength": "",
+        "medium": {
+          "description": "Mueller Hinton Broth",
+          "name": "MHB"
+        },
+        "note": "10 Clinical isolates",
+        "peptideId": 36,
+        "ph": "",
+        "reference": "2",
+        "saltType": "",
+        "targetSpecies": {
+          "name": "Pseudomonas aeruginosa"
+        },
+        "unit": {
+          "description": "",
+          "name": "µM"
+        }
+      },
+      {
+        "activity": 256.36563,
+        "activityMeasureGroup": {
+          "name": "MBC"
+        },
+        "activityMeasureValue": "MBC",
+        "cfu": "5E5",
+        "cfuGroup": {
+          "name": "1E5 - 1E6"
+        },
+        "concentration": "5.42-86.68",
+        "id": 66617,
+        "ionicStrength": "",
+        "medium": {
+          "description": "Mueller Hinton Broth",
+          "name": "MHB"
+        },
+        "note": "10 Clinical isolates",
+        "peptideId": 36,
+        "ph": "",
+        "reference": "2",
+        "saltType": "",
+        "targetSpecies": {
+          "name": "Pseudomonas aeruginosa"
+        },
+        "unit": {
+          "description": "",
+          "name": "µM"
+        }
+      },
+      {
+        "activity": 128.18282,
+        "activityMeasureGroup": {
+          "name": "MIC"
+        },
+        "activityMeasureValue": "MIC",
+        "cfu": "5E5",
+        "cfuGroup": null,
+        "concentration": "1.35-43.34",
+        "id": 66620,
+        "ionicStrength": "",
+        "medium": {
+          "description": "Mueller Hinton Broth",
+          "name": "MHB"
+        },
+        "note": "10 MSSA Clinical isolates",
+        "peptideId": 36,
+        "ph": "",
+        "reference": "2",
+        "saltType": "",
+        "targetSpecies": {
+          "name": "Staphylococcus aureus"
+        },
+        "unit": {
+          "description": "",
+          "name": "µM"
+        }
+      },
+      {
+        "activity": 128.18282,
+        "activityMeasureGroup": {
+          "name": "MBC"
+        },
+        "activityMeasureValue": "MBC",
+        "cfu": "5E5",
+        "cfuGroup": {
+          "name": "1E5 - 1E6"
+        },
+        "concentration": "2.71-43.34",
+        "id": 66623,
+        "ionicStrength": "",
+        "medium": {
+          "description": "Mueller Hinton Broth",
+          "name": "MHB"
+        },
+        "note": "10 MSSA Clinical isolates",
+        "peptideId": 36,
+        "ph": "",
+        "reference": "2",
+        "saltType": "",
+        "targetSpecies": {
+          "name": "Staphylococcus aureus"
+        },
+        "unit": {
+          "description": "",
+          "name": "µM"
+        }
+      },
+      {
+        "activity": 128.18282,
+        "activityMeasureGroup": {
+          "name": "MIC"
+        },
+        "activityMeasureValue": "MIC",
+        "cfu": "5E5",
+        "cfuGroup": {
+          "name": "1E5 - 1E6"
+        },
+        "concentration": "1.35-43.34",
+        "id": 66626,
+        "ionicStrength": "",
+        "medium": {
+          "description": "Mueller Hinton Broth",
+          "name": "MHB"
+        },
+        "note": "10 MRSA Clinical isolates",
+        "peptideId": 36,
+        "ph": "",
+        "reference": "2",
+        "saltType": "",
+        "targetSpecies": {
+          "description": "",
+          "name": "Staphylococcus aureus MR"
+        },
+        "unit": {
+          "description": "",
+          "name": "µM"
+        }
+      },
+      {
+        "activity": 128.18282,
+        "activityMeasureGroup": {
+          "name": "MBC"
+        },
+        "activityMeasureValue": "MBC",
+        "cfu": "5E5",
+        "cfuGroup": {
+          "name": "1E5 - 1E6"
+        },
+        "concentration": "2.71-43.34",
+        "id": 66629,
+        "ionicStrength": "",
+        "medium": {
+          "description": "Mueller Hinton Broth",
+          "name": "MHB"
+        },
+        "note": "10 MRSA Clinical isolates",
+        "peptideId": 36,
+        "ph": "",
+        "reference": "2",
+        "saltType": "",
+        "targetSpecies": {
+          "description": "",
+          "name": "Staphylococcus aureus MR"
+        },
+        "unit": {
+          "description": "",
+          "name": "µM"
+        }
+      },
+      {
+        "activity": 128.18282,
+        "activityMeasureGroup": {
+          "name": "MIC"
+        },
+        "activityMeasureValue": "MIC",
+        "cfu": "5E5",
+        "cfuGroup": {
+          "name": "1E5 - 1E6"
+        },
+        "concentration": "1.35-43.34",
+        "id": 66632,
+        "ionicStrength": "",
+        "medium": {
+          "description": "Mueller Hinton Broth",
+          "name": "MHB"
+        },
+        "note": "10 Clinical isolates",
+        "peptideId": 36,
+        "ph": "",
+        "reference": "2",
+        "saltType": "",
+        "targetSpecies": {
+          "name": "Streptococcus pneumoniae"
+        },
+        "unit": {
+          "description": "",
+          "name": "µM"
+        }
+      },
+      {
+        "activity": 128.18282,
+        "activityMeasureGroup": {
+          "name": "MBC"
+        },
+        "activityMeasureValue": "MBC",
+        "cfu": "5E5",
+        "cfuGroup": {
+          "name": "1E5 - 1E6"
+        },
+        "concentration": "2.71-43.34",
+        "id": 66635,
+        "ionicStrength": "",
+        "medium": {
+          "description": "Mueller Hinton Broth",
+          "name": "MHB"
+        },
+        "note": "10 Clinical isolates",
+        "peptideId": 36,
+        "ph": "",
+        "reference": "2",
+        "saltType": "",
+        "targetSpecies": {
+          "name": "Streptococcus pneumoniae"
+        },
+        "unit": {
+          "description": "",
+          "name": "µM"
+        }
+      },
+      {
+        "activity": 128.18282,
+        "activityMeasureGroup": {
+          "name": "MIC"
+        },
+        "activityMeasureValue": "MIC",
+        "cfu": "5E5",
+        "cfuGroup": {
+          "name": "1E5 - 1E6"
+        },
+        "concentration": "5.42-43.34",
+        "id": 66638,
+        "ionicStrength": "",
+        "medium": {
+          "description": "Mueller Hinton Broth",
+          "name": "MHB"
+        },
+        "note": "5 Clinical isolates",
+        "peptideId": 36,
+        "ph": "",
+        "reference": "2",
+        "saltType": "",
+        "targetSpecies": {
+          "name": "Enterococcus faecium"
+        },
+        "unit": {
+          "description": "",
+          "name": "µM"
+        }
+      },
+      {
+        "activity": 256.36563,
+        "activityMeasureGroup": {
+          "name": "MBC"
+        },
+        "activityMeasureValue": "MBC",
+        "cfu": "5E5",
+        "cfuGroup": {
+          "name": "1E5 - 1E6"
+        },
+        "concentration": "5.42-86.68",
+        "id": 66639,
+        "ionicStrength": "",
+        "medium": {
+          "description": "Mueller Hinton Broth",
+          "name": "MHB"
+        },
+        "note": "5 Clinical isolates",
+        "peptideId": 36,
+        "ph": "",
+        "reference": "2",
+        "saltType": "",
+        "targetSpecies": {
+          "name": "Enterococcus faecium"
+        },
+        "unit": {
+          "description": "",
+          "name": "µM"
+        }
+      },
+      {
+        "activity": 128.18282,
+        "activityMeasureGroup": {
+          "name": "MIC"
+        },
+        "activityMeasureValue": "MIC",
+        "cfu": "5E5",
+        "cfuGroup": {
+          "name": "1E5 - 1E6"
+        },
+        "concentration": "1.35-43.34",
+        "id": 66640,
+        "ionicStrength": "",
+        "medium": {
+          "description": "Mueller Hinton Broth",
+          "name": "MHB"
+        },
+        "note": "10 Clinical isolates",
+        "peptideId": 36,
+        "ph": "",
+        "reference": "2",
+        "saltType": "",
+        "targetSpecies": {
+          "name": "Enterococcus faecalis"
+        },
+        "unit": {
+          "description": "",
+          "name": "µM"
+        }
+      },
+      {
+        "activity": 64.09141,
+        "activityMeasureGroup": {
+          "name": "MBC"
+        },
+        "activityMeasureValue": "MBC",
+        "cfu": "5E5",
+        "cfuGroup": {
+          "name": "1E5 - 1E6"
+        },
+        "concentration": "2.71-21.67",
+        "id": 66643,
+        "ionicStrength": "",
+        "medium": {
+          "description": "Mueller Hinton Broth",
+          "name": "MHB"
+        },
+        "note": "10 Clinical isolates",
+        "peptideId": 36,
+        "ph": "",
+        "reference": "2",
+        "saltType": "",
+        "targetSpecies": {
+          "name": "Enterococcus faecalis"
+        },
+        "unit": {
+          "description": "",
+          "name": "µM"
+        }
+      }
+    ],
+    "unusualAminoAcids": []
+  }
+}

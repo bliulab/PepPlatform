@@ -1,0 +1,40 @@
+target-version = "py310"
+line-length = 100
+indent-width = 4
+force-exclude = true
+
+include = [
+    "pepplatform/**/*.py",
+    "alembic/**/*.py",
+    "tests/**/*.py",
+    "docker/download_models.py",
+    "docker/check_runtime.py",
+    "scripts/train_pipeline.py",
+    "scripts/train_sequence_pipeline.py",
+    "scripts/train_pair_pipeline.py",
+    "scripts/train_ensemble.py",
+    "scripts/import_legacy_sqlite.py",
+    "scripts/replay_experiment_metrics.py",
+    "tools/audit_evaluation_protocol.py",
+    "tools/verify_prott5_equivalence.py",
+    "tools/verify_prott5_loader_rng.py",
+    "tools/verify_prott5_restore.py",
+    "tools/build_pair_split_data.py",
+    "tools/build_ppi_profile_cache.py",
+    "tools/build_psfm_cache.py",
+    "tools/build_pssm_cache.py",
+    "tools/build_sequence_profile_cache.py",
+    "tools/build_web_route_smoke_dataset.py",
+    "tools/decode_hlai_pseudoseq.py",
+    "tools/public_datasets.py",
+    "tools/train_static_embeddings.py",
+    "tools/train_unigram_tokenizer.py",
+]
+
+extend-exclude = ["datasets", "models", "output", "tmp*"]
+
+[format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "lf"
+docstring-code-format = false

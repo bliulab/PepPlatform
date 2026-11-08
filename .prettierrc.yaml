@@ -1,0 +1,11 @@
+printWidth: 100
+tabWidth: 2
+useTabs: false
+semi: false
+singleQuote: true
+quoteProps: preserve
+trailingComma: all
+endOfLine: lf
+htmlWhitespaceSensitivity: strict
+vueIndentScriptAndStyle: false
+embeddedLanguageFormatting: auto

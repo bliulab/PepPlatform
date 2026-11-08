@@ -1,0 +1,7 @@
+# Explicit CPU alternative; use together with docker-compose.yml for every command.
+services:
+  backend:
+    build:
+      args:
+        TORCH_CHANNEL: cpu
+    gpus: !reset []
