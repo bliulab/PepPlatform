@@ -85,6 +85,8 @@ from pepplatform.objectives import (
 )
 from pepplatform.ml_trainers import ClassicalMLTrainer
 from pepplatform.cli_wizard import InteractiveConfigWizard
+from pepplatform.cli_training import add_language_argument
+from pepplatform.cli_interaction import TASKS
 from pepplatform.route_registry import (
     ROUTE_SCHEMA_VERSION,
     format_effective_route,
@@ -553,69 +555,81 @@ def default_pair_feature_dir(task_root, task_type, data_dir=""):
 
 class PPIInteractiveWizard(InteractiveConfigWizard):
     def _prompt_partner_stream(self, args, step):
-        print(f"Step {step}: Choose Two-stream representation settings")
+        self.say(f"Step {step}: Choose Two-stream representation settings")
         topology = self.prompt_choice(
             "Representation settings",
             ["homogeneous (linked)", "heterogeneous (independent)"],
-            "homogeneous (linked)",
+            "heterogeneous (independent)" if getattr(args, "partner_tokenizer", "") else "homogeneous (linked)",
         )
         step += 1
         if topology.startswith("homogeneous"):
+            defaults = vars(build_argument_parser().parse_args([]))
+            for key in vars(args):
+                if key.startswith("partner_") and key in defaults:
+                    setattr(args, key, defaults[key])
             return step, True
 
-        print(f"Step {step}: Choose partner feature extraction")
+        self.say(f"Step {step}: Choose partner feature extraction")
+        previous_tokenizer = getattr(args, "partner_tokenizer", "")
+        previous_route = getattr(args, "partner_feature_route", "")
+        default_route = "classic pipeline" if (
+            previous_route == "classic" or previous_tokenizer in CLASSIC_TOKENIZERS
+        ) else "pretrained model"
         route = self.prompt_choice(
             "Partner feature extraction",
             ["pretrained model", "classic pipeline"],
-            "pretrained model",
+            default_route,
         )
         step += 1
         if route == "pretrained model":
-            print(f"Step {step}: Choose partner tokenizer")
+            self.say(f"Step {step}: Choose partner tokenizer")
             args.partner_tokenizer = self.prompt_choice(
                 "Partner tokenizer",
                 PRETRAINED_TOKENIZERS,
-                "prott5",
+                previous_tokenizer if previous_tokenizer in PRETRAINED_TOKENIZERS else "prott5",
             )
             args.partner_feature_route = "pretrained"
             args.partner_encoder = args.partner_tokenizer
-            print(f"Partner encoder: {args.partner_encoder} (coupled to pretrained tokenizer)")
+            self.say(f"Partner encoder: {args.partner_encoder} (coupled to pretrained tokenizer)")
             step += 1
             default_source = PRETRAINED_MODEL_DEFAULTS.get(args.partner_tokenizer, "")
+            if args.partner_tokenizer == previous_tokenizer:
+                default_source = getattr(args, "partner_model_source", "") or default_source
             args.partner_model_source = self.prompt_text(
-                f"Step {step}: Partner model source",
+                f"Step {step}: Partner model source ({args.partner_tokenizer})",
                 default_source,
             )
             step += 1
             allow_token = True
         else:
-            print(f"Step {step}: Choose partner tokenizer")
+            self.say(f"Step {step}: Choose partner tokenizer")
             args.partner_tokenizer = self.prompt_choice(
                 "Partner tokenizer",
                 CLASSIC_TOKENIZERS,
-                "kmer",
+                previous_tokenizer if previous_tokenizer in CLASSIC_TOKENIZERS else "kmer",
             )
             step += 1
             encoders = CLASSIC_ENCODER_OPTIONS.get(args.partner_tokenizer, ["index"])
-            print(f"Step {step}: Choose partner encoder")
+            self.say(f"Step {step}: Choose partner encoder")
             args.partner_encoder = self.prompt_choice(
                 "Partner encoder",
                 encoders,
-                encoders[0],
+                getattr(args, "partner_encoder", "") if getattr(args, "partner_encoder", "") in encoders else encoders[0],
             )
             args.partner_feature_route = "classic"
+            args.partner_model_source = ""
             step += 1
             allow_token = str(args.partner_encoder).lower() in set(DL_SEQUENCE_ENCODERS)
         args.partner_max_length = self.prompt_int(
             f"Step {step}: Partner max length",
-            int(getattr(args, "max_length", 512)),
+            int(getattr(args, "partner_max_length", 0) or getattr(args, "max_length", 512)),
             1,
         )
         step += 1
         if args.partner_tokenizer == "kmer":
             args.partner_k = self.prompt_int(
                 f"Step {step}: Partner k-mer size",
-                int(getattr(args, "k", 2)),
+                int(getattr(args, "partner_k", 0) or getattr(args, "k", 2)),
                 1,
                 max_value=KMER_MAX_K,
             )
@@ -623,23 +637,26 @@ class PPIInteractiveWizard(InteractiveConfigWizard):
         return step, allow_token
 
     def run(self, args):
+        self._legacy_summary = False
         step = 1
-        print("Entering interactive mode")
-        print(f"Step {step}: Choose task")
-        task_options = ["pep_function", "pep_protein_interaction", "pep_hlaii", "pep_hlai"]
+        self.say("Entering interactive mode")
+        self.say(f"Step {step}: Choose task")
+        task_options = list(TASKS)
         default_task = normalize_task_type(getattr(args, "task_type", "pep_protein_interaction"))
         if normalize_task_type(default_task) == "pep_function_multilabel":
             default_task = "pep_function"
         if normalize_task_type(default_task) not in task_options:
             default_task = "pep_protein_interaction"
-        args.task_type = self.prompt_choice("Task", task_options, default_task)
+        if not self.task_selected:
+            args.task_type = self.prompt_choice("Task", task_options, default_task)
+        self._current_task = normalize_task_type(args.task_type)
         step += 1
 
         if normalize_task_type(args.task_type) == "pep_function":
-            print(f"{args.task_type} task is handled by scripts/train_sequence_pipeline.py")
+            self.say(f"{args.task_type} task is handled by scripts/train_sequence_pipeline.py")
             raise SystemExit("Please run: python scripts/train_sequence_pipeline.py")
 
-        print(f"Step {step}: Choose feature extraction")
+        self.say(f"Step {step}: Choose feature extraction")
         default_tokenizer = normalize_tokenizer_name(getattr(args, "tokenizer", ""))
         default_mode = (
             "pretrained model" if default_tokenizer in PRETRAINED_TOKENIZERS else "classic pipeline"
@@ -651,21 +668,21 @@ class PPIInteractiveWizard(InteractiveConfigWizard):
 
         if feature_mode == "pretrained model":
             args.feature_mode = "single"
-            print(f"Step {step}: Choose tokenizer")
+            self.say(f"Step {step}: Choose tokenizer")
             args.tokenizer = self.prompt_choice(
                 "Tokenizer", PRETRAINED_TOKENIZERS, default_tokenizer or "esm2"
             )
             args.encoder = args.tokenizer
-            print(f"Encoder: {args.encoder} (coupled to pretrained tokenizer)")
+            self.say(f"Encoder: {args.encoder} (coupled to pretrained tokenizer)")
             step += 1
         elif feature_mode == "classic pipeline":
             args.feature_mode = "single"
-            print(f"Step {step}: Choose tokenizer")
+            self.say(f"Step {step}: Choose tokenizer")
             args.tokenizer = self.prompt_choice(
                 "Tokenizer", CLASSIC_TOKENIZERS, getattr(args, "tokenizer", "kmer")
             )
             step += 1
-            print(f"Step {step}: Choose encoder")
+            self.say(f"Step {step}: Choose encoder")
             enc_options = CLASSIC_ENCODER_OPTIONS.get(args.tokenizer, ["index"])
             default_enc = getattr(args, "encoder", enc_options[0])
             if default_enc not in enc_options:
@@ -721,21 +738,21 @@ class PPIInteractiveWizard(InteractiveConfigWizard):
             if getattr(args, "partner_tokenizer", ""):
                 if getattr(args, "predictor_type", "classifier") == "sample_graph":
                     if str(getattr(args, "model", "") or "").lower() == HGT_MODEL:
-                        print("HGT keeps heterogeneous streams as typed role inputs.")
+                        self.say("HGT keeps heterogeneous streams as typed role inputs.")
                         args.fusion_mode = None
                     else:
-                        print("Heterogeneous sample-graph streams use concat fusion.")
+                        self.say("Heterogeneous sample-graph streams use concat fusion.")
                         args.fusion_mode = "concat"
                 elif getattr(
                     args, "interaction_level", "vector"
                 ) == "vector" and resolve_fusion_mode(
                     getattr(args, "fusion_mode", "concat_all")
                 ) not in {"concat", "aligned_gated"}:
-                    print("Heterogeneous streams require concat or aligned_gated; using concat.")
+                    self.say("Heterogeneous streams require concat or aligned_gated; using concat.")
                     args.fusion_mode = "concat"
         step, semantic_back = self._prompt_semantic_auxiliary(args, step)
         if semantic_back == "__BACK__":
-            print("Returning to previous step")
+            self.say("Returning to previous step")
             return self.run(args)
 
         args.max_length = self.prompt_int(
@@ -774,7 +791,7 @@ class PPIInteractiveWizard(InteractiveConfigWizard):
                     SAGE_MODEL: "GraphSAGE",
                     GT_MODEL: "GraphTransformer",
                 }.get(args.model, str(args.model).upper())
-                print(f"{graph_name} selected: sample-graph")
+                self.say(f"{graph_name} selected: sample-graph")
                 args.gnn_k = self.prompt_int(
                     f"Step {step}: {graph_name} kNN k", int(getattr(args, "gnn_k", 8)), 1
                 )
@@ -807,8 +824,18 @@ class PPIInteractiveWizard(InteractiveConfigWizard):
             default_root = "datasets/task_peptide_HLAII_interaction"
         else:
             default_root = "datasets/task_peptide_protein_interaction"
+        if self.ui is not None:
+            args.data_dir = self.prompt_text(
+                "Data directory" if self.wrapped else "Data directory (blank=legacy CSV layout)",
+                getattr(args, "data_dir", "") or (
+                    self._default_data_dir(args, default_root) if self.wrapped else ""
+                ),
+            )
+            self.say("Blank CSV paths use data_dir splits when provided; otherwise the original task layout applies.")
         args.task_root = self.prompt_text(
-            f"Step {step}: task root", getattr(args, "task_root", default_root)
+            f"Step {step}: task root", getattr(args, "task_root", "") or (
+                str(Path(args.data_dir).parent) if self.wrapped and args.data_dir else default_root
+            )
         )
         step += 1
         args.train_csv = self.prompt_text(f"Step {step}: train csv", getattr(args, "train_csv", ""))
@@ -821,43 +848,43 @@ class PPIInteractiveWizard(InteractiveConfigWizard):
             f"Step {step}: feature dir", getattr(args, "feature_dir", "")
         )
 
-        print("Configuration complete")
-        print(f"task_type={args.task_type}")
-        print(f"feature_mode={getattr(args, 'feature_mode', 'single')}")
-        print(f"tokenizer={args.tokenizer}")
-        print(f"encoder={getattr(args, 'encoder', '')}")
+        self.say("Configuration complete")
+        self.say(f"task_type={args.task_type}")
+        self.say(f"feature_mode={getattr(args, 'feature_mode', 'single')}")
+        self.say(f"tokenizer={args.tokenizer}")
+        self.say(f"encoder={getattr(args, 'encoder', '')}")
         if getattr(args, "partner_tokenizer", ""):
-            print(f"partner_tokenizer={args.partner_tokenizer}")
-            print(f"partner_encoder={getattr(args, 'partner_encoder', '')}")
-            print(f"partner_model_source={getattr(args, 'partner_model_source', '')}")
-            print(f"partner_max_length={getattr(args, 'partner_max_length', '')}")
-        print(f"pair_strategy={getattr(args, 'pair_strategy', '')}")
+            self.say(f"partner_tokenizer={args.partner_tokenizer}")
+            self.say(f"partner_encoder={getattr(args, 'partner_encoder', '')}")
+            self.say(f"partner_model_source={getattr(args, 'partner_model_source', '')}")
+            self.say(f"partner_max_length={getattr(args, 'partner_max_length', '')}")
+        self.say(f"pair_strategy={getattr(args, 'pair_strategy', '')}")
         if getattr(args, "interaction_level", ""):
-            print(f"interaction_level={args.interaction_level}")
+            self.say(f"interaction_level={args.interaction_level}")
         if getattr(args, "interaction_model", ""):
-            print(f"interaction_model={args.interaction_model}")
-        print(f"predictor_type={getattr(args, 'predictor_type', 'classifier')}")
+            self.say(f"interaction_model={args.interaction_model}")
+        self.say(f"predictor_type={getattr(args, 'predictor_type', 'classifier')}")
         if getattr(args, "graph_predictor", ""):
-            print(f"graph_predictor={args.graph_predictor}")
+            self.say(f"graph_predictor={args.graph_predictor}")
         if getattr(args, "sequence_model", ""):
-            print(f"sequence_model={args.sequence_model}")
-            print(f"training_mode={args.training_mode}")
-            print(f"classifier={args.classifier}")
+            self.say(f"sequence_model={args.sequence_model}")
+            self.say(f"training_mode={args.training_mode}")
+            self.say(f"classifier={args.classifier}")
         if getattr(args, "feature_mode", "single") == "multimodal":
-            print(f"primary_feature_mode={getattr(args, 'primary_feature_mode', 'pretrained')}")
-            print(f"aux_feature_mode={getattr(args, 'aux_feature_mode', 'classic')}")
-            print(f"aux_tokenizer={getattr(args, 'aux_tokenizer', 'kmer')}")
-            print(f"aux_encoder={getattr(args, 'aux_encoder', 'index')}")
-            print(f"mm_align_dim={int(getattr(args, 'mm_align_dim', 256))}")
-        print(f"model={args.model}")
+            self.say(f"primary_feature_mode={getattr(args, 'primary_feature_mode', 'pretrained')}")
+            self.say(f"aux_feature_mode={getattr(args, 'aux_feature_mode', 'classic')}")
+            self.say(f"aux_tokenizer={getattr(args, 'aux_tokenizer', 'kmer')}")
+            self.say(f"aux_encoder={getattr(args, 'aux_encoder', 'index')}")
+            self.say(f"mm_align_dim={int(getattr(args, 'mm_align_dim', 256))}")
+        self.say(f"model={args.model}")
         if args.model == HGT_MODEL:
-            print("input_adapter=typed_role_projection")
+            self.say("input_adapter=typed_role_projection")
         elif args.model in ["mlp", "svm", "rf", "xgb", "lgb", "logreg"] + GRAPH_MODELS:
-            print(f"fusion_mode={getattr(args, 'fusion_mode', 'concat_all')}")
-        print(f"enable_semantic_similarity={self._semantic_auxiliary_enabled(args)}")
+            self.say(f"fusion_mode={getattr(args, 'fusion_mode', 'concat_all')}")
+        self.say(f"enable_semantic_similarity={self._semantic_auxiliary_enabled(args)}")
         if self._semantic_auxiliary_enabled(args):
-            print("semantic_similarity_type=auxiliary_loss")
-        print(f"task_root={args.task_root}")
+            self.say("semantic_similarity_type=auxiliary_loss")
+        self.say(f"task_root={args.task_root}")
         return args
 
 
@@ -13655,12 +13682,17 @@ def build_argument_parser():
     parser.add_argument("--resume_embedding_bundle", type=str, default="")
     add_selection_arguments(parser)
     add_legacy_semantic_argument(parser)
+    add_language_argument(parser)
     return register_legacy_cli_aliases(parser)
 
 
 def main(argv=None):
+    from pepplatform.cli_training import without_language
+    raw_arguments = list(sys.argv[1:] if argv is None else argv)
     parser = build_argument_parser()
-    args = parser.parse_args(argv)
+    args = parser.parse_args(raw_arguments)
+    language = vars(args).pop("lang", None)
+    no_arguments = not without_language(raw_arguments)
     args.task_type = normalize_task_type(args.task_type)
     if args.list_objectives:
         print(json.dumps(objective_capabilities(), indent=2))
@@ -13675,9 +13707,24 @@ def main(argv=None):
     if normalize_task_type(normalized_task) in ["pep_hlai_interaction", "peptide_hlai_interaction"]:
         args.task_type = "pep_hlai"
 
-    no_arguments = len(argv) == 0 if argv is not None else len(sys.argv) == 1
     if args.interactive or no_arguments:
-        args = PPIInteractiveWizard().run(args)
+        from pepplatform.cli_interaction import Interaction, WizardCancelled
+        from pepplatform.cli_training import configure_training, explicit_task, replay_arguments
+        ui = Interaction(language)
+        try:
+            args, selected_parser, script = configure_training(
+                raw_arguments, task=explicit_task(raw_arguments), default_task="pep_protein_interaction",
+                ui=ui, current=(parser, PPIInteractiveWizard, _StreamPath(__file__).resolve()),
+            )
+        except WizardCancelled:
+            ui.say("Cancelled.")
+            return
+        except (KeyboardInterrupt, EOFError):
+            ui.say("Cancelled.")
+            return 130
+        if script.name != _StreamPath(__file__).name:
+            from importlib import import_module
+            return import_module("scripts." + script.stem).main(replay_arguments(selected_parser, args))
     if args.profile_on_missing is None:
         tokenizer = str(args.tokenizer).strip().lower()
         encoder = str(args.encoder).strip().lower()
@@ -13707,4 +13754,6 @@ install_legacy_stream_exports(globals())
 
 
 if __name__ == "__main__":
-    run_with_failure_reporting(main)
+    result = run_with_failure_reporting(main)
+    if isinstance(result, int):
+        raise SystemExit(result)

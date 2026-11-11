@@ -94,6 +94,17 @@ python -m pepplatform_cli
 python -m pepplatform_cli --help
 ```
 
+交互启动时先选择中文或 English，导航、训练向导、集成、推理、运行历史及配置摘要均使用
+所选语言。可以用 `python -m pepplatform_cli --lang zh` 或 `--lang en` 跳过语言选择。
+旧的 `scripts/train_pipeline.py`、`train_sequence_pipeline.py`、`train_pair_pipeline.py`
+交互入口也支持此选项。任务只选择一次；已通过参数指定任务时直接进入后续配置。
+
+配置过程中，`b` 返回上一输入项，`q` 取消当前流程；在主菜单中则退出。返回后已填内容会作为
+默认值保留；可用 `-` 清空可选文本字段。执行前会展示输入路径、seed、loss、语义设置、选择协议和非交互复现命令，
+并提供“运行／修改／取消”，默认“修改”。选择“运行”后才创建运行记录并启动计算；
+已有非交互命令不会增加询问。模型名、参数名及专用术语保留英文，训练日志和机器可读 JSON
+维持原格式；语言与导航状态不进入训练元数据或复现参数。
+
 
 ## 数据与模型
 

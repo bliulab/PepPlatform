@@ -6,6 +6,7 @@ if _stream_root not in _stream_sys.path:
     _stream_sys.path.insert(0, _stream_root)
 
 from pepplatform.task_compat import normalize_task_type
+from pepplatform.cli_training import add_language_argument
 
 import argparse
 import os
@@ -63,6 +64,7 @@ def build_parser():
         action="store_true",
         help="Forward advanced wizard mode to the selected task-specific entrypoint.",
     )
+    add_language_argument(parser)
     return register_legacy_cli_aliases(parser)
 
 
@@ -101,4 +103,4 @@ install_legacy_stream_exports(globals())
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main() or 0)

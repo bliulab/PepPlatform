@@ -66,6 +66,7 @@ from pepplatform.objectives import (
 )
 from pepplatform.ml_trainers import ClassicalMLTrainer
 from pepplatform.cli_wizard import InteractiveConfigWizard
+from pepplatform.cli_training import add_language_argument
 from pepplatform.route_registry import (
     ROUTE_SCHEMA_VERSION,
     format_effective_route,
@@ -6083,12 +6084,17 @@ def build_argument_parser():
     parser.add_argument("--artifact_dir", type=str, default="")
     parser.add_argument("--resume_embedding_bundle", type=str, default="")
     add_selection_arguments(parser, checkpoint=False)
+    add_language_argument(parser)
     return register_legacy_cli_aliases(parser)
 
 
 def main(argv=None):
+    from pepplatform.cli_training import without_language
+    raw_arguments = list(sys.argv[1:] if argv is None else argv)
     parser = build_argument_parser()
-    args = parser.parse_args(argv)
+    args = parser.parse_args(raw_arguments)
+    language = vars(args).pop("lang", None)
+    no_arguments = not without_language(raw_arguments)
     args.task_type = normalize_task_type(args.task_type)
     if args.list_objectives:
         print(json.dumps(objective_capabilities(), indent=2))
@@ -6102,14 +6108,29 @@ def main(argv=None):
         normalized_task = "pep_hlaii"
     if normalize_task_type(normalized_task) in ["pep_hlai_interaction", "peptide_hlai_interaction"]:
         normalized_task = "pep_hlai"
-    if normalize_task_type(normalized_task) in PAIR_TASK_TYPES:
+    if normalize_task_type(normalized_task) in PAIR_TASK_TYPES and not (args.interactive or no_arguments):
         raise SystemExit(
             f"{normalized_task} is a pair-interaction task. "
             "Use scripts/train_pair_pipeline.py or scripts/train_pipeline.py."
         )
-    no_arguments = len(argv) == 0 if argv is not None else len(sys.argv) == 1
     if args.interactive or no_arguments:
-        args = InteractiveConfigWizard().run(args)
+        from pepplatform.cli_interaction import Interaction, WizardCancelled
+        from pepplatform.cli_training import configure_training, explicit_task, replay_arguments
+        ui = Interaction(language)
+        try:
+            args, selected_parser, script = configure_training(
+                raw_arguments, task=explicit_task(raw_arguments), default_task="pep_function",
+                ui=ui, current=(parser, InteractiveConfigWizard, _StreamPath(__file__).resolve()),
+            )
+        except WizardCancelled:
+            ui.say("Cancelled.")
+            return
+        except (KeyboardInterrupt, EOFError):
+            ui.say("Cancelled.")
+            return 130
+        if script.name != _StreamPath(__file__).name:
+            from importlib import import_module
+            return import_module("scripts." + script.stem).main(replay_arguments(selected_parser, args))
     if args.profile_on_missing is None:
         tokenizer = str(args.tokenizer).strip().lower()
         encoder = str(args.encoder).strip().lower()
@@ -6135,4 +6156,6 @@ install_legacy_stream_exports(globals())
 
 
 if __name__ == "__main__":
-    run_with_failure_reporting(main)
+    result = run_with_failure_reporting(main)
+    if isinstance(result, int):
+        raise SystemExit(result)

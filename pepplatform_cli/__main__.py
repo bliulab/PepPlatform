@@ -6,23 +6,35 @@ import json
 import sys
 from pathlib import Path
 
-from .storage import (CLIError, DEFAULT_WORKSPACE, export_csv, finish_run, guard_output,
-                      history, new_run, read_json, write_json)
+from pepplatform.cli_interaction import TASKS, Interaction, WizardCancelled
+from pepplatform.cli_training import add_language_argument
 
-TASKS = ("pep_function", "pep_hlai", "pep_hlaii", "pep_protein_interaction")
+from .storage import (
+    DEFAULT_WORKSPACE,
+    CLIError,
+    export_csv,
+    finish_run,
+    guard_output,
+    history,
+    new_run,
+    read_json,
+    write_json,
+)
 
 
 def build_parser():
     parser = argparse.ArgumentParser(description="Local PepPlatform training, ensembles and inference")
     parser.add_argument("--workspace", default=str(DEFAULT_WORKSPACE))
+    add_language_argument(parser)
     sub = parser.add_subparsers(dest="command")
 
     def workspace(p):
         p.add_argument("--workspace", default=argparse.SUPPRESS)
+        add_language_argument(p)
 
     train = sub.add_parser("train", help="Run unchanged trainers with a provenance envelope")
     workspace(train)
-    train.add_argument("--task-type", choices=TASKS, default="pep_function")
+    train.add_argument("--task-type", choices=TASKS)
     train.add_argument("--interactive", action="store_true")
     train.add_argument("--advanced-wizard", action="store_true")
     train.add_argument("--artifact-dir")
@@ -76,7 +88,7 @@ def build_parser():
 
 def ensemble_config(args):
     config = read_json(args.config) if args.config else {}
-    excluded = {"command", "action", "config", "workspace", "report"}
+    excluded = {"command", "action", "config", "workspace", "report", "lang"}
     config.update({k: v for k, v in vars(args).items() if k not in excluded})
     proofs = config.pop("member_provenance", None)
     if proofs is not None:
@@ -89,7 +101,7 @@ def ensemble_config(args):
 
 
 def create_ensemble(config, workspace):
-    from .ensemble import prepare, assemble
+    from .ensemble import assemble, prepare
     request = prepare(config)
     if "test_splits" in config:
         request["test_splits"] = config["test_splits"]
@@ -108,6 +120,7 @@ def create_ensemble(config, workspace):
 
 def predict(args):
     from pepplatform.task_compat import normalize_task_type
+
     from .data import prediction_inputs
     from .inference import predict_artifact
     metadata = read_json(Path(args.artifact_dir) / "metadata.json")
@@ -129,15 +142,16 @@ def predict(args):
         raise
 
 
-def dispatch(args):
+def dispatch(args, *, ui=None):
     if args.command is None:
         from .wizard import navigate
-        return navigate(args.workspace)
+        return navigate(args.workspace, ui=ui)
     if args.command == "train":
         from .training import train
         raw = args.trainer_args[1:] if args.trainer_args[:1] == ["--"] else args.trainer_args
         return train(raw, task=args.task_type, interactive=args.interactive, advanced=args.advanced_wizard,
-                     workspace=args.workspace, artifact_dir=args.artifact_dir)
+                     workspace=args.workspace, artifact_dir=args.artifact_dir,
+                     language=getattr(args, "lang", None), ui=ui)
     if args.command == "ensemble":
         from .ensemble import preflight
         config = ensemble_config(args)
@@ -171,14 +185,20 @@ def dispatch(args):
 
 def main(argv=None):
     args = build_parser().parse_args(argv)
+    ui = Interaction(getattr(args, "lang", None), steps=args.command == "train")
     try:
-        result = dispatch(args)
+        result = dispatch(args, ui=ui)
         if result is not None:
+            if ui.started:
+                ui.say("Operation complete")
             print(json.dumps(result, ensure_ascii=False, indent=2, allow_nan=False))
         return 2 if isinstance(result, dict) and result.get("valid") is False else 0
     except (KeyboardInterrupt, EOFError):
-        print("Cancelled.", file=sys.stderr)
+        print(ui.t("Cancelled.") if ui.started else "Cancelled.", file=sys.stderr)
         return 130
+    except WizardCancelled:
+        ui.say("Cancelled.")
+        return 0
     except (ValueError, OSError, KeyError, TypeError, RuntimeError) as exc:
         print(json.dumps({"error": {"code": getattr(exc, "code", "cli_failed"), "message": str(exc)}},
                          ensure_ascii=False), file=sys.stderr)

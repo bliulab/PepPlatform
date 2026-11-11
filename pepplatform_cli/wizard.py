@@ -1,129 +1,225 @@
-"""Unified navigation without importing the CLI from any historical trainer."""
+"""Shared-language navigation. Collection is read-only until explicit execution."""
 from __future__ import annotations
 
 import json
+import math
 import shlex
+import sys
 from pathlib import Path
 
-from .storage import CLIError, guard_output, history, write_json
+from pepplatform.cli_interaction import TASKS, Interaction, WizardCancelled, path_value
+from pepplatform.cli_training import print_group
+
+from .storage import guard_output, history, read_json, write_json
 
 
-def choice(title, options, default=0):
-    print(f"\n{title}")
-    for i, option in enumerate(options, 1):
-        print(f"  {i}. {option}")
-    while True:
-        raw = input(f"Choice [{default + 1}] (b: back, q: cancel): ").strip()
-        if raw.lower() in {"b", "q"}:
-            return None
-        try:
-            selected = int(raw or default + 1) - 1
-            if 0 <= selected < len(options):
-                return options[selected]
-        except ValueError:
-            pass
-        print("Choose a listed number.")
+def json_object(value):
+    def invalid_constant(_):
+        raise ValueError("Please enter a JSON object.")
+
+    try:
+        result = json.loads(value, parse_constant=invalid_constant)
+    except ValueError:
+        raise ValueError("Please enter a JSON object.") from None
+    if not isinstance(result, dict):
+        raise ValueError("Please enter a JSON object.")  # noqa: TRY004 -- JSON text has an invalid value/shape.
+    return result
 
 
-def text(title, default=""):
-    raw = input(f"{title}" + (f" [{default}]" if default else "") + " (b: back, q: cancel): ").strip()
-    if raw.lower() in {"b", "q"}:
-        raise CLIError("wizard_cancelled", "Returned to navigation")
-    return raw or default
+def directory(ui, title, default=""):
+    return ui.text(title, default, validate=lambda value: str(path_value(value, exists="directory")))
 
 
-def ensemble_wizard(workspace):
-    from .ensemble import preflight
-    from .__main__ import create_ensemble
-    from .__main__ import TASKS
-    task = choice("Task", list(TASKS))
-    if task is None:
-        return
-    config = {"task_type": task, "data_dir": str(Path(text("Dataset directory")).expanduser().resolve())}
-    config["members"] = [str(Path(p).expanduser().resolve()) for p in shlex.split(text("Member artifact paths (quote paths containing spaces)"))]
-    config["method"] = choice("Fusion method", ["probability_mean", "logit_mean", "rank_mean"])
-    if config["method"] is None:
-        return
-    config["weight_source"] = choice("Member weights", ["equal", "custom", "validation"])
-    if config["weight_source"] is None:
-        return
-    if config["weight_source"] == "custom":
-        config["weights"] = [float(x) for x in text("Weights in member order").replace(",", " ").split()]
-    if config["weight_source"] == "validation":
-        config["grid_step"] = float(text("Weight grid step", "0.05"))
-    config["objective"] = choice("Weight selection objective", ["macro_f1", "sacc", "auc", "aupr", "dual_f1_sacc"]
-                                 if task == "pep_function" else ["auc", "aupr", "f1"])
-    if config["objective"] is None:
-        return
-    if config["objective"] == "dual_f1_sacc":
-        config["objective_params"] = json.loads(text("Objective parameters (JSON)"))
-    config["threshold_objective"] = choice("Threshold objective", ["macro_f1", "sacc", "dual_f1_sacc"]
-                                           if task == "pep_function" else ["f1"])
-    if config["threshold_objective"] is None:
-        return
-    if config["threshold_objective"] == "dual_f1_sacc":
-        config["threshold_objective_params"] = json.loads(text("Threshold parameters (JSON)"))
-    config["seed"] = int(text("Seed", "42"))
-    evaluate = choice("Evaluate independent tests after freezing?", ["No", "Yes"])
-    if evaluate is None:
-        return
-    config["evaluate_test"] = evaluate == "Yes"
-    if config["evaluate_test"]:
-        names = text("Test split names (empty: test/test_* discovery)")
-        if names:
-            config["test_splits"] = names.replace(",", " ").split()
-    policy = choice("Training provenance", ["Strict verification", "Allow unverified legacy provenance"])
-    if policy is None:
-        return
-    config["allow_unverified_provenance"] = policy == "Allow unverified legacy provenance"
-    while True:
-        report = preflight(config)
-        print(json.dumps(report, ensure_ascii=False, indent=2))
-        if report["valid"]:
-            break
-        action = choice("Preflight failed", ["Edit configuration as JSON", "Return to navigation"])
-        if action != "Edit configuration as JSON":
-            return
-        config.update(json.loads(text("Configuration fields to replace (JSON object)")))
-    print("\nConfiguration:\n" + json.dumps(config, ensure_ascii=False, indent=2))
-    destination = guard_output(text("Save replayable configuration", str(Path(workspace) / "configs" / "ensemble.json")),
-                               [config["data_dir"], *[m["artifact_dir"] if isinstance(m, dict) else m for m in config["members"]]])
+def new_output(value, sources=()):
+    destination = guard_output(path_value(value), sources)
     if destination.exists():
-        raise CLIError("output_exists", f"Choose a new configuration file: {destination}")
+        raise ValueError(f"Output already exists: {destination}")
+    return str(destination)
+
+
+def replay(ui, command):
+    if ui.cursor >= ui.replay_until:
+        print(ui.t("Replay") + ": " + shlex.join(command))
+
+
+def ensemble_wizard(workspace, ui=None):
+    from .__main__ import create_ensemble
+    from .ensemble import preflight
+
+    ui = ui or Interaction()
+    workspace = Path(workspace).expanduser().resolve()
+    ui.choose_language()
+
+    def collect():
+        task = ui.choice("Task", TASKS, TASKS[0])
+        config = {"task_type": task, "data_dir": directory(ui, "Dataset directory")}
+        if task == "pep_hlai":
+            source_root = ui.text("Source directory (HLA-I mapping; blank=automatic)", validate=lambda value:
+                                  str(path_value(value, exists="directory")) if value else "")
+            if source_root:
+                config["source_root"] = source_root
+
+        def members(value):
+            try:
+                paths = shlex.split(value)
+            except ValueError:
+                raise ValueError("Please enter at least two member artifact paths.") from None
+            if len(paths) < 2:
+                raise ValueError("Please enter at least two member artifact paths.")
+            return [str(path_value(path, exists="directory")) for path in paths]
+
+        config["members"] = ui.text("Member artifact paths (quote paths containing spaces)", validate=members)
+        config["method"] = ui.choice("Fusion method", ["probability_mean", "logit_mean", "rank_mean"])
+        config["weight_source"] = ui.choice("Member weights", ["equal", "custom", "validation"])
+        if config["weight_source"] == "custom":
+            def weights(value):
+                try:
+                    result = [float(x) for x in value.replace(",", " ").split()]
+                except ValueError:
+                    result = []
+                if len(result) != len(config["members"]) or any(not math.isfinite(x) or x < 0 for x in result) or not any(result):
+                    raise ValueError("Please enter finite nonnegative weights with a positive sum, one per member.")
+                return result
+            config["weights"] = ui.text("Weights in member order", validate=weights)
+        elif config["weight_source"] == "validation":
+            config["grid_step"] = ui.number("Weight grid step", 0.05, 0, exclusive_minimum=True)
+        config["objective"] = ui.choice("Weight selection objective",
+            ["macro_f1", "sacc", "auc", "aupr", "dual_f1_sacc"] if task == "pep_function" else ["auc", "aupr", "f1"])
+        if config["objective"] == "dual_f1_sacc":
+            config["objective_params"] = ui.text("Objective parameters (JSON)", validate=json_object)
+        config["threshold_objective"] = ui.choice("Threshold objective",
+            ["macro_f1", "sacc", "dual_f1_sacc"] if task == "pep_function" else ["f1"])
+        if config["threshold_objective"] == "dual_f1_sacc":
+            config["threshold_objective_params"] = ui.text("Threshold parameters (JSON)", validate=json_object)
+        config["seed"] = ui.integer("Seed", 42)
+        config["evaluate_test"] = ui.choice("Evaluate independent tests after freezing?", ["No", "Yes"]) == "Yes"
+        if config["evaluate_test"]:
+            names = ui.text("Test split names (empty: test/test_* discovery)")
+            if names:
+                config["test_splits"] = names.replace(",", " ").split()
+        config["allow_unverified_provenance"] = ui.choice("Training provenance",
+            ["Strict verification", "Allow unverified legacy provenance"]) == "Allow unverified legacy provenance"
+        while True:
+            report = preflight(config)
+            if report["valid"]:
+                break
+            print_group(ui, "Preflight failed", report)
+            action = ui.choice("Preflight failed", ["Modify", "Edit configuration as JSON", "Return to navigation"])
+            if action == "Return to navigation":
+                raise WizardCancelled()
+            if action == "Modify":
+                ui.rewind()
+            config.update(ui.text("Configuration fields to replace (JSON object)", validate=json_object))
+        print_group(ui, "Configuration", config)
+        sources = [config["data_dir"], *[m["artifact_dir"] if isinstance(m, dict) else m for m in config["members"]]]
+        destination = ui.text("Save replayable configuration", str(Path(workspace) / "configs" / "ensemble.json"),
+                              validate=lambda value: new_output(value, sources))
+        replay(ui, [sys.executable, "-m", "pepplatform_cli", "ensemble", "create", "--config", destination,
+                    "--workspace", str(Path(workspace).expanduser().resolve())])
+        ui.confirm()
+        return config, destination
+
+    config, destination = ui.collect(collect)
     write_json(destination, config)
-    command = ["python", "-m", "pepplatform_cli", "ensemble", "create", "--config", str(destination),
-               "--workspace", str(Path(workspace).resolve())]
-    print("Replay: " + shlex.join(command))
-    if choice("Create this ensemble?", ["Create", "Return to navigation"], default=1) == "Create":
-        print(json.dumps(create_ensemble(config, workspace), ensure_ascii=False, indent=2))
+    ui.result(create_ensemble(config, workspace))
 
 
-def navigate(workspace):
-    from .__main__ import TASKS, main
-    while True:
-        selected = choice("PepPlatform / 本地工作流", ["Train / 训练", "Ensemble / 创建集成", "Predict / 推理",
-                                                      "History / 运行历史", "Exit / 退出"])
-        if selected is None or selected.startswith("Exit"):
-            return
+def predict_wizard(workspace, ui):
+    from pepplatform.task_compat import normalize_task_type
+
+    from . import __main__
+    from .data import prediction_inputs
+    workspace = Path(workspace).expanduser().resolve()
+
+    def collect():
+        def artifact(value):
+            path = path_value(value, exists="directory")
+            path_value(str(path / "metadata.json"), exists="file")
+            read_json(path / "metadata.json")
+            return str(path)
+
+        bundle = ui.text("Model artifact directory", validate=artifact)
+        metadata = read_json(Path(bundle) / "metadata.json")
+        task = normalize_task_type(metadata.get("args", {}).get("task_type") or metadata.get("task_type"))
+        input_path = ui.text("Input FASTA/CSV/JSON", validate=lambda value: str(path_value(value, exists="file")))
+        source_root = ""
+        if task == "pep_hlai":
+            source_root = ui.text("Source directory (HLA-I mapping; blank=automatic)", validate=lambda value:
+                                  str(path_value(value, exists="directory")) if value else "")
         try:
-            if selected.startswith("Train"):
-                task = choice("Task", list(TASKS))
-                if task is not None:
-                    main(["train", "--task-type", task, "--interactive", "--workspace", str(workspace)])
-            elif selected.startswith("Ensemble"):
-                ensemble_wizard(workspace)
-            elif selected.startswith("Predict"):
-                main(["predict", "--artifact-dir", text("Model artifact directory"), "--input", text("Input FASTA/CSV/JSON"),
-                      "--workspace", str(workspace)])
+            prediction_inputs(input_path, task, source_root or None)
+        except (ValueError, OSError) as exc:
+            ui.say(f"Invalid configuration: {exc}")
+            ui.retry_field("Input FASTA/CSV/JSON")
+        command = ["predict", "--artifact-dir", bundle, "--input", input_path, "--workspace", str(workspace)]
+        if source_root:
+            command.extend(["--source-root", source_root])
+        print_group(ui, "Configuration", {"task_type": task, "artifact_dir": bundle, "input": input_path,
+                                           "source_root": source_root or None, "workspace": str(workspace)})
+        replay(ui, [sys.executable, "-m", "pepplatform_cli", *command])
+        ui.confirm()
+        return __main__.build_parser().parse_args(command)
+
+    ui.result(__main__.predict(ui.collect(collect)))
+
+
+def history_wizard(workspace, ui):
+    from . import __main__
+    workspace = Path(workspace).expanduser().resolve()
+    records = history(workspace)
+    if not records:
+        ui.say("No runs found.")
+        return
+    print_group(ui, "History", [{key: record.get(key) for key in ("run_id", "kind", "status")} for record in records])
+
+    def collect():
+        action = ui.choice("History actions", ["Show run", "Export inference CSV", "Return to navigation"],
+                           "Return to navigation")
+        if action == "Return to navigation":
+            raise WizardCancelled()
+        choices = records if action == "Show run" else [r for r in records if r.get("kind") == "predict" and r.get("status") == "succeeded"]
+        if not choices:
+            ui.say("Select a successful inference run.")
+            ui.rewind()
+        run_id = ui.choice("Run ID", [r["run_id"] for r in choices])
+        command = ["history", "show" if action == "Show run" else "export", run_id, "--workspace", str(workspace)]
+        if action != "Show run":
+            record = next(r for r in choices if r["run_id"] == run_id)
+            destination = ui.text("New CSV path", validate=lambda value: new_output(
+                value, [record["directory"], record.get("source_artifact", "")]))
+            command.extend(["--output", destination])
+            print_group(ui, "Configuration", {"run_id": run_id, "output": destination})
+            replay(ui, [sys.executable, "-m", "pepplatform_cli", *command])
+            ui.confirm()
+        return __main__.build_parser().parse_args(command)
+
+    ui.result(__main__.dispatch(ui.collect(collect)))
+
+
+def navigate(workspace, ui=None):
+    from .training import train
+    ui = ui or Interaction(steps=False)
+    workspace = Path(workspace).expanduser().resolve()
+    ui.choose_language()
+    while True:
+        try:
+            selected = ui.collect(lambda: ui.choice("PepPlatform / Local workflows",
+                                  ["Train", "Ensemble", "Predict", "History", "Exit"], "Train"))
+        except WizardCancelled:
+            return
+        if selected == "Exit":
+            return
+        child = Interaction(ui.language)
+        try:
+            if selected == "Train":
+                child.result(train([], task=None, interactive=True, workspace=workspace, ui=child))
+            elif selected == "Ensemble":
+                ensemble_wizard(workspace, child)
+            elif selected == "Predict":
+                predict_wizard(workspace, child)
             else:
-                records = history(workspace)
-                print(json.dumps(records, ensure_ascii=False, indent=2))
-                if records:
-                    action = choice("History actions", ["Show run", "Export inference CSV", "Return to navigation"], 2)
-                    if action == "Show run":
-                        main(["history", "show", text("Run ID"), "--workspace", str(workspace)])
-                    elif action == "Export inference CSV":
-                        main(["history", "export", text("Run ID"), "--output", text("New CSV path"),
-                              "--workspace", str(workspace)])
+                history_wizard(workspace, child)
+        except WizardCancelled:
+            ui.say("Returned to navigation")
         except (ValueError, OSError, KeyError, TypeError, RuntimeError) as exc:
-            print(f"{getattr(exc, 'code', 'wizard_failed')}: {exc}")
+            ui.say(f"Operation failed ({getattr(exc, 'code', 'wizard_failed')}): {exc}")

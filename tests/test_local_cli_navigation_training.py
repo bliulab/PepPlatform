@@ -88,7 +88,7 @@ def test_explicit_arguments_override_config(tmp_path):
 
 def test_navigation_exit_and_keyboard_cancel(tmp_path, monkeypatch):
     monkeypatch.setattr("builtins.input", lambda *_: "5")
-    assert main(["--workspace", str(tmp_path / "workspace")]) == 0
+    assert main(["--lang", "en", "--workspace", str(tmp_path / "workspace")]) == 0
     assert not (tmp_path / "workspace").exists()
     monkeypatch.setattr("builtins.input", lambda *_: (_ for _ in ()).throw(KeyboardInterrupt()))
     assert main(["--workspace", str(tmp_path / "workspace")]) == 130
@@ -106,11 +106,13 @@ def test_ensemble_navigation_repair_save_and_create(tmp_path, monkeypatch):
     monkeypatch.setattr(ensemble, "preflight", preflight)
     monkeypatch.setattr(__main__, "create_ensemble", lambda config, workspace: captured.append(dict(config)) or {"status": "succeeded"})
     config_path = tmp_path / "saved.json"
+    for name in ("data", "one", "two"):
+        (tmp_path / name).mkdir()
     entries = iter(["2", "1", str(tmp_path / "data"), f"{tmp_path}/one {tmp_path}/two", "1", "2", "2,3",
-                    "1", "1", "", "1", "1", "1", '{"allow_unverified_provenance": true}',
+                    "1", "1", "", "1", "1", "2", '{"allow_unverified_provenance": true}',
                     str(config_path), "1", "5"])
     monkeypatch.setattr("builtins.input", lambda *_: next(entries))
-    assert main(["--workspace", str(tmp_path / "workspace")]) == 0
+    assert main(["--lang", "en", "--workspace", str(tmp_path / "workspace")]) == 0
     assert len(checks) == 2 and len(captured) == 1
     assert captured[0]["weights"] == [2, 3]
     assert read_json(config_path) == captured[0]

@@ -3,8 +3,8 @@ from pepplatform.task_compat import normalize_task_type, resolve_hlai_root
 from pepplatform.pair_terminology import normalize_pair_strategy, public_pair_strategy
 
 import json
-import math
 import os
+from pepplatform.cli_interaction import Interaction, TASKS, field_title, path_value
 from pepplatform.kmer import KMER_MAX_K
 from pepplatform.frequency import (
     FREQUENCY_DEFAULT_MAX_RAW_LENGTH,
@@ -80,6 +80,23 @@ TRAINABLE_DL_MODEL_NAMES = DL_SEQUENCE_MODEL_NAMES + ["mlp"] + PAIR_TOKEN_INTERA
 
 
 class InteractiveConfigWizard:
+    def __init__(self, *, ui=None, task_selected=False, wrapped=False):
+        self.ui = ui
+        self.task_selected = task_selected
+        self.wrapped = wrapped
+        self._legacy_summary = False
+        self._fallback_ui = Interaction("en")
+
+    def say(self, message=""):
+        # The shared controller supplies the reviewed summary. Keep the raw
+        # collector's historical output available to Python callers.
+        if self.ui is None:
+            print(message)
+        elif message == "Configuration complete":
+            self._legacy_summary = True
+        elif not self._legacy_summary and message != "Entering interactive mode" and not str(message).startswith("Step "):
+            self.ui.say(message)
+
     def _task_root(self, task_type):
         task_type = normalize_task_type(task_type)
         normalized = normalize_task_type(task_type or "pep_function")
@@ -187,8 +204,8 @@ class InteractiveConfigWizard:
         if options == ["none"]:
             args.reduction = "none"
             return step, None
-        print(f"Step {step}: Choose feature transformation")
-        print("LSA uses uncentered truncated SVD; LDA and PLSA are topic-model transformations.")
+        self.say(f"Step {step}: Choose feature transformation")
+        self.say("LSA uses uncentered truncated SVD; LDA and PLSA are topic-model transformations.")
         default_reduction = getattr(args, "reduction", "none")
         if default_reduction not in options:
             default_reduction = "none"
@@ -294,7 +311,7 @@ class InteractiveConfigWizard:
         return next(architecture for architecture, label in labels.items() if label == chosen)
 
     def _prompt_sequence_route(self, args, step, allow_back=False):
-        print(f"Step {step}: Choose modeling architecture")
+        self.say(f"Step {step}: Choose modeling architecture")
         architectures = self._architecture_options_for_encoder(getattr(args, "encoder", ""))
         default_sequence_model = getattr(args, "sequence_model", "") or (
             args.model
@@ -325,7 +342,7 @@ class InteractiveConfigWizard:
             or current_architecture in CHAIN_GRAPH_ARCHITECTURES
             else route_labels[0]
         )
-        print(f"Step {step}: Choose predictor route")
+        self.say(f"Step {step}: Choose predictor route")
         chosen_route = self.prompt_choice(
             "Predictor route",
             route_labels,
@@ -338,7 +355,7 @@ class InteractiveConfigWizard:
         if chosen_route == route_labels[0]:
             return self._prompt_classifier(args, step, allow_back=allow_back)
 
-        print(f"Step {step}: Choose modeling architecture")
+        self.say(f"Step {step}: Choose modeling architecture")
         architecture = self._prompt_architecture_choice(
             args,
             SEQUENCE_MODELS,
@@ -373,7 +390,7 @@ class InteractiveConfigWizard:
             ):
                 args.residue_adapter_dim = adapter_dim
                 break
-            print(
+            self.say(
                 "Residue adapter dimension must be between "
                 f"{RESIDUE_ADAPTER_DIM_MIN} and {RESIDUE_ADAPTER_DIM_MAX}, "
                 f"and divisible by {RESIDUE_ADAPTER_DIM_MULTIPLE}."
@@ -383,7 +400,7 @@ class InteractiveConfigWizard:
     def _prompt_training_mode_for_sequence_model(
         self, args, step, sequence_model, allow_back=False
     ):
-        print(f"Step {step}: Choose training mode")
+        self.say(f"Step {step}: Choose training mode")
         training_labels = [
             "end-to-end prediction",
             "export embeddings for downstream classification",
@@ -405,11 +422,11 @@ class InteractiveConfigWizard:
         step += 1
         classifier = "mlp"
         if training_mode == EXPORT_EMBEDDINGS:
-            print(
+            self.say(
                 f"Export mode first trains {sequence_model} with a temporary neural head "
                 "for embedding learning; the downstream classifier is the final predictor."
             )
-            print(f"Step {step}: Choose downstream classifier")
+            self.say(f"Step {step}: Choose downstream classifier")
             default_classifier = effective_classifier(args)
             if default_classifier not in CLASSICAL_CLASSIFIERS:
                 default_classifier = "svm"
@@ -428,7 +445,7 @@ class InteractiveConfigWizard:
     def _prompt_training_mode_for_interaction_model(
         self, args, step, interaction_model, allow_back=False
     ):
-        print(f"Step {step}: Choose training mode")
+        self.say(f"Step {step}: Choose training mode")
         training_labels = [
             "end-to-end prediction",
             "export embeddings for downstream classification",
@@ -450,11 +467,11 @@ class InteractiveConfigWizard:
         args.classifier = "mlp"
         step += 1
         if args.training_mode == EXPORT_EMBEDDINGS:
-            print(
+            self.say(
                 f"Export mode first trains {interaction_model} with a temporary neural head "
                 "for interaction-embedding learning; the downstream classifier is the final predictor."
             )
-            print(f"Step {step}: Choose downstream classifier")
+            self.say(f"Step {step}: Choose downstream classifier")
             default_classifier = effective_classifier(args)
             if default_classifier not in CLASSICAL_CLASSIFIERS:
                 default_classifier = "svm"
@@ -487,7 +504,7 @@ class InteractiveConfigWizard:
         default_label = options[0]
         if default_strategy == "two_stream":
             default_label = "two_stream"
-        print(f"Step {step}: Choose pair strategy")
+        self.say(f"Step {step}: Choose pair strategy")
         chosen = self.prompt_choice("Pair strategy", options, default_label, allow_back=allow_back)
         if chosen == "__BACK__":
             return step, "__BACK__"
@@ -507,7 +524,7 @@ class InteractiveConfigWizard:
             if default_level == TOKEN_INTERACTION and allow_token
             else labels[0]
         )
-        print(f"Step {step}: Choose interaction level")
+        self.say(f"Step {step}: Choose interaction level")
         chosen_level_label = self.prompt_choice(
             "Interaction level", labels, default_label, allow_back=allow_back
         )
@@ -518,7 +535,7 @@ class InteractiveConfigWizard:
         )
         step += 1
         if interaction_level == TOKEN_INTERACTION:
-            print(f"Step {step}: Choose interaction architecture")
+            self.say(f"Step {step}: Choose interaction architecture")
             default_model = (
                 str(getattr(args, "interaction_model", "") or "cross_attn").strip().lower()
             )
@@ -541,7 +558,7 @@ class InteractiveConfigWizard:
         default_label = (
             "sample-graph predictor" if default_predictor == "sample_graph" else "classifier"
         )
-        print(f"Step {step}: Choose predictor route")
+        self.say(f"Step {step}: Choose predictor route")
         chosen_predictor = self.prompt_choice(
             "Predictor route", predictor_labels, default_label, allow_back=allow_back
         )
@@ -549,7 +566,7 @@ class InteractiveConfigWizard:
             return step, "__BACK__"
         step += 1
         if chosen_predictor == "sample-graph predictor":
-            print(f"Step {step}: Choose sample-graph architecture")
+            self.say(f"Step {step}: Choose sample-graph architecture")
             default_graph = str(getattr(args, "graph_predictor", "") or "gcn").strip().lower()
             if default_graph not in GRAPH_PREDICTORS:
                 default_graph = "gcn"
@@ -606,7 +623,7 @@ class InteractiveConfigWizard:
     def _prompt_classifier(
         self, args, step, title="Choose classifier", options=None, allow_back=False
     ):
-        print(f"Step {step}: {title}")
+        self.say(f"Step {step}: {title}")
         options = options or CLASSIFIERS
         default_classifier = effective_classifier(args)
         if default_classifier not in options:
@@ -677,10 +694,10 @@ class InteractiveConfigWizard:
                 try:
                     args.head_hidden_dims = parse_prediction_head_hidden_dims(value)
                 except ValueError as exc:
-                    print(exc)
+                    self.say(exc)
                     continue
                 if not args.head_hidden_dims:
-                    print("Use the linear preset for an empty hidden-dimension list.")
+                    self.say("Use the linear preset for an empty hidden-dimension list.")
                     continue
                 break
             step += 1
@@ -733,7 +750,12 @@ class InteractiveConfigWizard:
         task = normalize_task_type(getattr(args, "task_type", ""))
         enabled = bool(enabled)
         args.enable_semantic_similarity = enabled
-        args.semantic_similarity_weight = float(getattr(args, "semantic_similarity_weight", 0.1))
+        canonical_weight = getattr(args, "semantic_similarity_weight", None)
+        legacy_weight = getattr(args, "interaction_semantic_similarity_weight", None)
+        args.semantic_similarity_weight = float(
+            canonical_weight if canonical_weight is not None
+            else legacy_weight if legacy_weight is not None else 0.1
+        )
         args.semantic_zero_weight = float(getattr(args, "semantic_zero_weight", 0.25))
         if normalize_task_type(task) != "pep_function":
             args.enable_interaction_semantic_similarity = None
@@ -757,90 +779,51 @@ class InteractiveConfigWizard:
         return step + 1, None
 
     def prompt_choice(self, title, options, default_value, allow_back=False):
-        if default_value in options:
-            default_idx = options.index(default_value) + 1
-        else:
-            default_idx = 1
-        while True:
-            print(f"{title} [1-{len(options)}] (default {default_idx}):")
-            for i, opt in enumerate(options, start=1):
-                print(f"{i}. {opt}")
-            raw = input("Choice: ").strip()
-            if raw == "__BACK__":
-                print("Back to previous step is disabled. Please choose a valid value.")
-                continue
-            if raw == "":
-                return options[default_idx - 1]
-            if raw.isdigit():
-                idx = int(raw)
-                if 1 <= idx <= len(options):
-                    return options[idx - 1]
-            if raw in options:
-                return raw
-            print("Invalid input. Please retry.")
+        return (self.ui or self._fallback_ui).choice(title, options, default_value)
 
     def prompt_int(self, title, default_value, min_value=None, allow_back=False, max_value=None):
-        while True:
-            raw = input(f"{title} (default {default_value}): ").strip()
-            if raw == "__BACK__":
-                print("Back to previous step is disabled. Please enter a valid integer.")
-                continue
-            if raw == "":
-                val = default_value
-            else:
-                try:
-                    val = int(raw)
-                except ValueError:
-                    print("Please enter an integer.")
-                    continue
-            if min_value is not None and val < min_value:
-                print(f"Please enter an integer >= {min_value}.")
-                continue
-            if max_value is not None and val > max_value:
-                print(f"Please enter an integer <= {max_value}.")
-                continue
-            return val
+        return (self.ui or self._fallback_ui).integer(title, default_value, min_value, max_value)
 
     def prompt_float(self, title, default_value, min_value=None, allow_back=False):
-        while True:
-            raw = input(f"{title} (default {default_value}): ").strip()
-            if raw == "__BACK__":
-                print("Back to previous step is disabled. Please enter a valid number.")
-                continue
-            if raw == "":
-                return default_value
-            try:
-                val = float(raw)
-            except ValueError:
-                print("Please enter a number.")
-                continue
-            if not math.isfinite(val):
-                print("Please enter a finite number.")
-                continue
-            if min_value is not None and val < min_value:
-                print(f"Please enter a number >= {min_value}.")
-                continue
-            return val
+        return (self.ui or self._fallback_ui).number(title, default_value, min_value)
 
     def prompt_text(self, title, default_value, allow_back=False):
-        while True:
-            raw = input(f"{title} (default {default_value}): ").strip()
-            if raw == "__BACK__":
-                print("Back to previous step is disabled. Please enter a valid text value.")
-                continue
-            return raw if raw else default_value
+        validate = None
+        name = field_title(title)
+        if self.ui is not None:
+            if name in {"Data directory", "Data directory (blank=legacy CSV layout)"}:
+                def validate(value):
+                    if not value and name != "Data directory":
+                        return ""
+                    root = path_value(value, base=self._project_root(), exists="directory")
+                    files = ("seqs.fasta", "labels.csv") if self._current_task == "pep_function" else ("pairs.csv",)
+                    for split in (("train", "val") if self.wrapped or self._current_task == "pep_function" else ("train",)):
+                        for filename in files:
+                            if not (root / split / filename).is_file():
+                                raise ValueError(f"Missing dataset file: {root / split / filename}")
+                    return str(root)
+            elif name.lower().split(" (")[0] in {"train csv", "val csv", "test csv"}:
+                def validate(value):
+                    return str(path_value(value, base=self._project_root(), exists="file")) if value else ""
+            elif any(word in name.lower() for word in ("path", "directory")) or name.lower() in {"task root", "feature dir"}:
+                def validate(value):
+                    return str(path_value(value, base=self._project_root())) if value else ""
+        return (self.ui or self._fallback_ui).text(title, default_value, validate=validate)
 
     def run(self, args):
+        self._legacy_summary = False
         step = 1
-        print("Entering interactive mode")
-        print(f"Step {step}: Choose task")
-        task_options = ["pep_function", "pep_protein_interaction", "pep_hlaii", "pep_hlai"]
+        self.say("Entering interactive mode")
+        self.say(f"Step {step}: Choose task")
+        task_options = list(TASKS)
         default_task = normalize_task_type(getattr(args, "task_type", "pep_function"))
         if normalize_task_type(default_task) == "pep_function_multilabel":
             default_task = "pep_function"
         if normalize_task_type(default_task) not in task_options:
             default_task = task_options[0]
-        args.task_type = self.prompt_choice("Task", task_options, default_task)
+        if not self.task_selected:
+            args.task_type = self.prompt_choice("Task", task_options, default_task)
+        self._current_task = normalize_task_type(args.task_type)
         if int(getattr(args, "epochs", 30)) == 30:
             if normalize_task_type(args.task_type) == "pep_hlaii":
                 args.epochs = 10
@@ -854,7 +837,7 @@ class InteractiveConfigWizard:
             "pep_hlaii",
             "pep_hlai",
         ]:
-            print(f"Step {step}: Choose feature extraction")
+            self.say(f"Step {step}: Choose feature extraction")
             default_mode = (
                 "pretrained model"
                 if normalize_tokenizer_name(getattr(args, "tokenizer", ""))
@@ -867,7 +850,7 @@ class InteractiveConfigWizard:
             step += 1
 
             if feature_mode == "pretrained model":
-                print(f"Step {step}: Choose pretrained model")
+                self.say(f"Step {step}: Choose pretrained model")
                 tokenizer_options = ["esm2", "protbert", "prott5", "esmc", "esm3"]
                 default_tok = normalize_tokenizer_name(getattr(args, "tokenizer", "esm2"))
                 if default_tok not in tokenizer_options:
@@ -876,10 +859,10 @@ class InteractiveConfigWizard:
                     "Pretrained model", tokenizer_options, default_tok
                 )
                 args.encoder = args.tokenizer
-                print(f"Encoder: {args.encoder} (coupled to pretrained tokenizer)")
+                self.say(f"Encoder: {args.encoder} (coupled to pretrained tokenizer)")
                 step += 1
             else:
-                print(f"Step {step}: Choose tokenizer")
+                self.say(f"Step {step}: Choose tokenizer")
                 tokenizer_options = [
                     "kmer",
                     "dr",
@@ -895,7 +878,7 @@ class InteractiveConfigWizard:
                 args.tokenizer = self.prompt_choice("Tokenizer", tokenizer_options, default_tok)
                 step += 1
 
-                print(f"Step {step}: Choose encoder")
+                self.say(f"Step {step}: Choose encoder")
                 if args.tokenizer in ["bpe", "wordpiece", "unigram"]:
                     encoder_options = ["index"]
                     default_enc = "index"
@@ -1015,7 +998,7 @@ class InteractiveConfigWizard:
                         if top_n <= maximum_top_n:
                             args.top_ngram_n = top_n
                             break
-                        print(f"top_ngram_n must be in [1,{maximum_top_n}], please reselect.")
+                        self.say(f"top_ngram_n must be in [1,{maximum_top_n}], please reselect.")
                     step += 1
                 if args.tokenizer == "dt":
                     args.dt_max_distance = self.prompt_int(
@@ -1088,7 +1071,7 @@ class InteractiveConfigWizard:
                 step, _ = self._prompt_two_stream_route(args, step, allow_token=allow_token)
             step, semantic_back = self._prompt_semantic_auxiliary(args, step)
             if semantic_back == "__BACK__":
-                print("Returning to previous step")
+                self.say("Returning to previous step")
                 return self.run(args)
 
             args.max_length = self.prompt_int(
@@ -1145,7 +1128,7 @@ class InteractiveConfigWizard:
                             )
                         )
                     )
-                    print(f"{graph_name} selected: sample-graph")
+                    self.say(f"{graph_name} selected: sample-graph")
                     args.gnn_k = self.prompt_int(
                         f"Step {step}: {graph_name} kNN k", int(getattr(args, "gnn_k", 8)), 1
                     )
@@ -1212,30 +1195,30 @@ class InteractiveConfigWizard:
             cache_choice = self.prompt_choice("Cache features", ["yes", "no"], default_cache)
             args.cache_features = cache_choice == "yes"
 
-            print("Configuration complete")
-            print(f"task_type={args.task_type}")
-            print(f"tokenizer={args.tokenizer}")
-            print(f"encoder={getattr(args, 'encoder', '')}")
-            print(f"model={args.model}")
-            print(f"pair_strategy={public_pair_strategy(getattr(args, 'pair_strategy', ''))}")
+            self.say("Configuration complete")
+            self.say(f"task_type={args.task_type}")
+            self.say(f"tokenizer={args.tokenizer}")
+            self.say(f"encoder={getattr(args, 'encoder', '')}")
+            self.say(f"model={args.model}")
+            self.say(f"pair_strategy={public_pair_strategy(getattr(args, 'pair_strategy', ''))}")
             if getattr(args, "interaction_level", ""):
-                print(f"interaction_level={args.interaction_level}")
+                self.say(f"interaction_level={args.interaction_level}")
             if getattr(args, "interaction_model", ""):
-                print(f"interaction_model={args.interaction_model}")
-            print(f"predictor_type={getattr(args, 'predictor_type', 'classifier')}")
+                self.say(f"interaction_model={args.interaction_model}")
+            self.say(f"predictor_type={getattr(args, 'predictor_type', 'classifier')}")
             if getattr(args, "graph_predictor", ""):
-                print(f"graph_predictor={args.graph_predictor}")
+                self.say(f"graph_predictor={args.graph_predictor}")
             if getattr(args, "sequence_model", ""):
-                print(f"sequence_model={args.sequence_model}")
-                print(f"training_mode={args.training_mode}")
-                print(f"classifier={args.classifier}")
+                self.say(f"sequence_model={args.sequence_model}")
+                self.say(f"training_mode={args.training_mode}")
+                self.say(f"classifier={args.classifier}")
             if getattr(args, "head_hidden_dims", None) is not None:
-                print(f"head_hidden_dims={json.dumps(args.head_hidden_dims)}")
+                self.say(f"head_hidden_dims={json.dumps(args.head_hidden_dims)}")
                 if args.head_hidden_dims:
-                    print(f"head_activation={args.head_activation}")
-                    print(f"head_dropout={args.head_dropout}")
+                    self.say(f"head_activation={args.head_activation}")
+                    self.say(f"head_dropout={args.head_dropout}")
             if args.model == "hgt":
-                print("input_adapter=typed_role_projection")
+                self.say("input_adapter=typed_role_projection")
             elif args.model in [
                 "mlp",
                 "svm",
@@ -1250,10 +1233,10 @@ class InteractiveConfigWizard:
                 "sage",
                 "graph_transformer",
             ]:
-                print(f"fusion_mode={getattr(args, 'fusion_mode', 'concat_all')}")
-            print(f"enable_semantic_similarity={self._semantic_auxiliary_enabled(args)}")
+                self.say(f"fusion_mode={getattr(args, 'fusion_mode', 'concat_all')}")
+            self.say(f"enable_semantic_similarity={self._semantic_auxiliary_enabled(args)}")
             if self._semantic_auxiliary_enabled(args):
-                print("semantic_similarity_type=auxiliary_loss")
+                self.say("semantic_similarity_type=auxiliary_loss")
             if getattr(args, "predictor_type", "") == "sample_graph" and args.model in [
                 "gcn",
                 "gat",
@@ -1261,25 +1244,25 @@ class InteractiveConfigWizard:
                 "sage",
                 "graph_transformer",
             ]:
-                print(f"graph_model={args.model}(sample_graph)")
-                print(f"gnn_k={getattr(args, 'gnn_k', 8)}")
-                print(f"gnn_hidden_dim={getattr(args, 'gnn_hidden_dim', 256)}")
-            print(f"report_aupr={getattr(args, 'report_aupr', True)}")
-            print(f"task_root={args.task_root}")
+                self.say(f"graph_model={args.model}(sample_graph)")
+                self.say(f"gnn_k={getattr(args, 'gnn_k', 8)}")
+                self.say(f"gnn_hidden_dim={getattr(args, 'gnn_hidden_dim', 256)}")
+            self.say(f"report_aupr={getattr(args, 'report_aupr', True)}")
+            self.say(f"task_root={args.task_root}")
             if getattr(args, "train_csv", ""):
-                print(f"train_csv={args.train_csv}")
+                self.say(f"train_csv={args.train_csv}")
             if getattr(args, "val_csv", ""):
-                print(f"val_csv={args.val_csv}")
+                self.say(f"val_csv={args.val_csv}")
             if getattr(args, "test_csv", ""):
-                print(f"test_csv={args.test_csv}")
+                self.say(f"test_csv={args.test_csv}")
             if getattr(args, "feature_dir", ""):
-                print(f"feature_dir={args.feature_dir}")
-            print(f"cache_features={getattr(args, 'cache_features', True)}")
+                self.say(f"feature_dir={args.feature_dir}")
+            self.say(f"cache_features={getattr(args, 'cache_features', True)}")
             return args
 
         pretrained_tokenizers = ["esm2", "protbert", "prott5", "esmc", "esm3"]
         classic_tokenizers = ["kmer", "dr", "top-n-gram", "dt", "bpe", "wordpiece", "unigram"]
-        print(f"Step {step}: Choose feature extraction")
+        self.say(f"Step {step}: Choose feature extraction")
         args.tokenizer = normalize_tokenizer_name(getattr(args, "tokenizer", ""))
         default_mode = (
             "pretrained model"
@@ -1291,14 +1274,14 @@ class InteractiveConfigWizard:
         )
         default_tokenizer = args.tokenizer
         if feature_mode == "pretrained model":
-            print("Step 2.1: Choose pretrained model")
+            self.say("Step 2.1: Choose pretrained model")
             if default_tokenizer not in pretrained_tokenizers:
                 default_tokenizer = pretrained_tokenizers[0]
             args.tokenizer = self.prompt_choice(
                 "Pretrained model", pretrained_tokenizers, default_tokenizer
             )
         else:
-            print("Step 2.1: Choose tokenizer")
+            self.say("Step 2.1: Choose tokenizer")
             if default_tokenizer not in classic_tokenizers:
                 default_tokenizer = classic_tokenizers[0]
             args.tokenizer = self.prompt_choice("Tokenizer", classic_tokenizers, default_tokenizer)
@@ -1306,16 +1289,16 @@ class InteractiveConfigWizard:
         step += 1
         if args.tokenizer in ["esm2", "protbert", "prott5", "esmc", "esm3"]:
             args.encoder = args.tokenizer
-            print(f"Encoder: {args.encoder} (coupled to pretrained tokenizer)")
+            self.say(f"Encoder: {args.encoder} (coupled to pretrained tokenizer)")
             step, route_back = self._prompt_pretrained_single_route(args, step, allow_back=True)
             if route_back == "__BACK__":
-                print("Returning to previous step")
+                self.say("Returning to previous step")
                 return self.run(args)
             max_length = self.prompt_int(
                 f"Step {step}: max length", args.max_length, 1, allow_back=True
             )
             if max_length == "__BACK__":
-                print("Returning to previous step")
+                self.say("Returning to previous step")
                 return self.run(args)
             args.max_length = max_length
             step += 1
@@ -1329,7 +1312,7 @@ class InteractiveConfigWizard:
                     f"Step {step}: ProtBERT feature directory", default_dir, allow_back=True
                 )
                 if protbert_dir == "__BACK__":
-                    print("Returning to previous step")
+                    self.say("Returning to previous step")
                     return self.run(args)
                 args.protbert_feature_dir = protbert_dir
                 step += 1
@@ -1342,7 +1325,7 @@ class InteractiveConfigWizard:
                     f"Step {step}: ProtBERT model name", default_model_name, allow_back=True
                 )
                 if protbert_model == "__BACK__":
-                    print("Returning to previous step")
+                    self.say("Returning to previous step")
                     return self.run(args)
                 args.protbert_model = protbert_model
                 step += 1
@@ -1356,7 +1339,7 @@ class InteractiveConfigWizard:
                     f"Step {step}: ProtT5 feature directory", default_dir, allow_back=True
                 )
                 if prott5_dir == "__BACK__":
-                    print("Returning to previous step")
+                    self.say("Returning to previous step")
                     return self.run(args)
                 args.prott5_feature_dir = prott5_dir
                 step += 1
@@ -1369,7 +1352,7 @@ class InteractiveConfigWizard:
                     f"Step {step}: ProtT5 model name", default_model_name, allow_back=True
                 )
                 if prott5_model == "__BACK__":
-                    print("Returning to previous step")
+                    self.say("Returning to previous step")
                     return self.run(args)
                 args.prott5_model = prott5_model
                 step += 1
@@ -1383,7 +1366,7 @@ class InteractiveConfigWizard:
                     f"Step {step}: ESMC feature directory", default_dir, allow_back=True
                 )
                 if esmc_dir == "__BACK__":
-                    print("Returning to previous step")
+                    self.say("Returning to previous step")
                     return self.run(args)
                 args.esmc_feature_dir = esmc_dir
                 step += 1
@@ -1402,7 +1385,7 @@ class InteractiveConfigWizard:
                     allow_back=True,
                 )
                 if esmc_model == "__BACK__":
-                    print("Returning to previous step")
+                    self.say("Returning to previous step")
                     return self.run(args)
                 args.esmc_model = esmc_model
                 step += 1
@@ -1416,7 +1399,7 @@ class InteractiveConfigWizard:
                     f"Step {step}: ESM3 feature directory", default_dir, allow_back=True
                 )
                 if esm3_dir == "__BACK__":
-                    print("Returning to previous step")
+                    self.say("Returning to previous step")
                     return self.run(args)
                 args.esm3_feature_dir = esm3_dir
                 step += 1
@@ -1429,7 +1412,7 @@ class InteractiveConfigWizard:
                     f"Step {step}: ESM3 model name", default_model_name, allow_back=True
                 )
                 if esm3_model == "__BACK__":
-                    print("Returning to previous step")
+                    self.say("Returning to previous step")
                     return self.run(args)
                 args.esm3_model = esm3_model
                 step += 1
@@ -1447,7 +1430,7 @@ class InteractiveConfigWizard:
                 step += 1
                 step, semantic_back = self._prompt_semantic_auxiliary(args, step)
                 if semantic_back == "__BACK__":
-                    print("Returning to previous step")
+                    self.say("Returning to previous step")
                     return self.run(args)
                 default_enable_reg = "yes" if getattr(args, "enable_regularization", True) else "no"
                 enable_reg = self.prompt_choice(
@@ -1591,7 +1574,7 @@ class InteractiveConfigWizard:
                         )
                         if args.histgb_max_leaf_nodes == 0 or args.histgb_max_leaf_nodes >= 2:
                             break
-                        print("HistGB max leaf nodes must be 0 (unlimited) or at least 2.")
+                        self.say("HistGB max leaf nodes must be 0 (unlimited) or at least 2.")
                     step += 1
                     args.histgb_lr = self.prompt_float(
                         f"Step {step}: HistGB learning rate", args.histgb_lr, 1e-12
@@ -1674,7 +1657,7 @@ class InteractiveConfigWizard:
         else:
             while True:
                 encoder_step = step
-                print("Step 2.2: Choose encoder")
+                self.say("Step 2.2: Choose encoder")
                 encoder_options = encoder_options_for_tokenizer(args.tokenizer)
                 encoder_options = ["TF-IDF" if enc == "tfidf" else enc for enc in encoder_options]
 
@@ -1688,7 +1671,7 @@ class InteractiveConfigWizard:
                     "Encoder", encoder_options, default_encoder, allow_back=True
                 )
                 if chosen_encoder == "__BACK__":
-                    print("Returning to previous step")
+                    self.say("Returning to previous step")
                     return self.run(args)
                 if chosen_encoder == "TF-IDF":
                     args.encoder = "tfidf"
@@ -1700,7 +1683,7 @@ class InteractiveConfigWizard:
                     args, step, allow_back=True
                 )
                 if transform_back == "__BACK__":
-                    print("Returning to previous step")
+                    self.say("Returning to previous step")
                     step = encoder_step
                     continue
 
@@ -1724,13 +1707,13 @@ class InteractiveConfigWizard:
                         allow_back=True,
                     )
                     if strategy_back == "__BACK__":
-                        print("Returning to previous step")
+                        self.say("Returning to previous step")
                         step = encoder_step
                         continue
                     if args.pair_strategy == "single_stream":
                         step, route_back = self._prompt_sequence_route(args, step, allow_back=True)
                         if route_back == "__BACK__":
-                            print("Returning to previous step")
+                            self.say("Returning to previous step")
                             step = encoder_step
                             continue
                         self._set_pair_route(args, pair_strategy="single_stream")
@@ -1742,7 +1725,7 @@ class InteractiveConfigWizard:
                             allow_back=True,
                         )
                         if route_back == "__BACK__":
-                            print("Returning to previous step")
+                            self.say("Returning to previous step")
                             step = encoder_step
                             continue
                 else:
@@ -1760,7 +1743,7 @@ class InteractiveConfigWizard:
                         "fasttext",
                     }
                     if family == "sequence" and args.encoder in flattenable_sequence_encoders:
-                        print(f"Step {step}: Choose predictor route")
+                        self.say(f"Step {step}: Choose predictor route")
                         route_options = [
                             "modeling architecture + prediction head",
                             "flattened features + classifier",
@@ -1769,7 +1752,7 @@ class InteractiveConfigWizard:
                             "Predictor route", route_options, route_options[0], allow_back=True
                         )
                         if chosen_route == "__BACK__":
-                            print("Returning to previous step")
+                            self.say("Returning to previous step")
                             step = encoder_step
                             continue
                         use_flattened_route = chosen_route == route_options[1]
@@ -1777,7 +1760,7 @@ class InteractiveConfigWizard:
                     if family == "sequence" and not use_flattened_route:
                         step, route_back = self._prompt_sequence_route(args, step, allow_back=True)
                         if route_back == "__BACK__":
-                            print("Returning to previous step")
+                            self.say("Returning to previous step")
                             step = encoder_step
                             continue
                     else:
@@ -1788,11 +1771,11 @@ class InteractiveConfigWizard:
                             args, step, options=classifier_options, allow_back=True
                         )
                         if route_back == "__BACK__":
-                            print("Returning to previous step")
+                            self.say("Returning to previous step")
                             step = encoder_step
                             continue
                 if self._needs_ml_settings(args):
-                    print(f"Step {step}: Choose ML feature scaling")
+                    self.say(f"Step {step}: Choose ML feature scaling")
                     default_ml_scaler = args.ml_scaler if hasattr(args, "ml_scaler") else "standard"
                     ml_scaler_options = ["none", "standard", "minmax"]
                     if default_ml_scaler not in ml_scaler_options:
@@ -1801,12 +1784,12 @@ class InteractiveConfigWizard:
                         "ML scaler", ml_scaler_options, default_ml_scaler, allow_back=True
                     )
                     if chosen_ml_scaler == "__BACK__":
-                        print("Returning to previous step")
+                        self.say("Returning to previous step")
                         step = encoder_step
                         continue
                     args.ml_scaler = chosen_ml_scaler
                     step += 1
-                    print(f"Step {step}: Choose ML dimensionality reduction")
+                    self.say(f"Step {step}: Choose ML dimensionality reduction")
                     default_ml_reduction = (
                         args.ml_reduction if hasattr(args, "ml_reduction") else "none"
                     )
@@ -1817,7 +1800,7 @@ class InteractiveConfigWizard:
                         "ML reduction", ml_reduction_options, default_ml_reduction, allow_back=True
                     )
                     if chosen_ml_reduction == "__BACK__":
-                        print("Returning to previous step")
+                        self.say("Returning to previous step")
                         step = encoder_step
                         continue
                     args.ml_reduction = chosen_ml_reduction
@@ -1830,7 +1813,7 @@ class InteractiveConfigWizard:
                             f"Step {step}: ML reduction dimension", default_dim, 1, allow_back=True
                         )
                         if ml_dim == "__BACK__":
-                            print("Returning to previous step")
+                            self.say("Returning to previous step")
                             step = encoder_step
                             continue
                         args.ml_reduction_dim = ml_dim
@@ -1844,7 +1827,7 @@ class InteractiveConfigWizard:
                             allow_back=True,
                         )
                         if kpca_kernel == "__BACK__":
-                            print("Returning to previous step")
+                            self.say("Returning to previous step")
                             step = encoder_step
                             continue
                         args.kpca_kernel = kpca_kernel
@@ -1859,7 +1842,7 @@ class InteractiveConfigWizard:
                                 f"Step {step}: KPCA gamma", default_gamma, 0.0, allow_back=True
                             )
                             if kpca_gamma == "__BACK__":
-                                print("Returning to previous step")
+                                self.say("Returning to previous step")
                                 step = encoder_step
                                 continue
                             args.kpca_gamma = kpca_gamma
@@ -1885,7 +1868,7 @@ class InteractiveConfigWizard:
                     allow_back=True,
                 )
                 if candidate == "__BACK__":
-                    print("Returning to previous step")
+                    self.say("Returning to previous step")
                     return self.run(args)
                 args.unigram_path = candidate
                 args.unigram_vocab_size = int(getattr(args, "unigram_vocab_size", 1000))
@@ -1908,7 +1891,7 @@ class InteractiveConfigWizard:
                         allow_back=True,
                     )
                     if candidate == "__BACK__":
-                        print("Returning to previous step")
+                        self.say("Returning to previous step")
                         return self.run(args)
                     if os.path.isabs(candidate):
                         abs_candidate = candidate
@@ -1918,7 +1901,7 @@ class InteractiveConfigWizard:
                     if os.path.exists(abs_candidate):
                         args.wordpiece_path = candidate
                         break
-                    print(f"WordPiece tokenizer not found: {abs_candidate}")
+                    self.say(f"WordPiece tokenizer not found: {abs_candidate}")
                 step += 1
 
             if (
@@ -1935,7 +1918,7 @@ class InteractiveConfigWizard:
                     max_value=KMER_MAX_K,
                 )
                 if k_val == "__BACK__":
-                    print("Returning to previous step")
+                    self.say("Returning to previous step")
                     return self.run(args)
                 args.k = k_val
                 step += 1
@@ -1950,7 +1933,7 @@ class InteractiveConfigWizard:
                     max_value=DR_MAX_DISTANCE,
                 )
                 if dr_max_distance == "__BACK__":
-                    print("Returning to previous step")
+                    self.say("Returning to previous step")
                     return self.run(args)
                 args.dr_max_distance = dr_max_distance
                 step += 1
@@ -1966,7 +1949,7 @@ class InteractiveConfigWizard:
                     max_value=DR_ABSOLUTE_MAX_RAW_LENGTH,
                 )
                 if raw_length == "__BACK__":
-                    print("Returning to previous step")
+                    self.say("Returning to previous step")
                     return self.run(args)
                 args.dr_max_raw_length = raw_length
                 step += 1
@@ -1979,10 +1962,10 @@ class InteractiveConfigWizard:
                         f"Step {step}: Top-N-Gram top_n", default_top_n, 1, allow_back=True
                     )
                     if top_n == "__BACK__":
-                        print("Returning to previous step")
+                        self.say("Returning to previous step")
                         return self.run(args)
                     if top_n < 1 or top_n > maximum_top_n:
-                        print(f"top_ngram_n must be in [1,{maximum_top_n}], please reselect.")
+                        self.say(f"top_ngram_n must be in [1,{maximum_top_n}], please reselect.")
                         continue
                     args.top_ngram_n = top_n
                     break
@@ -2005,7 +1988,7 @@ class InteractiveConfigWizard:
                     max_value=FREQUENCY_MAX_RAW_LENGTH,
                 )
                 if raw_length == "__BACK__":
-                    print("Returning to previous step")
+                    self.say("Returning to previous step")
                     return self.run(args)
                 args.frequency_max_raw_length = raw_length
                 step += 1
@@ -2021,7 +2004,7 @@ class InteractiveConfigWizard:
                     max_value=DT_MAX_DISTANCE,
                 )
                 if dt_max_distance == "__BACK__":
-                    print("Returning to previous step")
+                    self.say("Returning to previous step")
                     return self.run(args)
                 args.dt_max_distance = dt_max_distance
                 step += 1
@@ -2030,7 +2013,7 @@ class InteractiveConfigWizard:
                 default_ac_lag = args.ac_lag if hasattr(args, "ac_lag") else 10
                 ac_lag = self.prompt_int(f"Step {step}: AC lag", default_ac_lag, 1, allow_back=True)
                 if ac_lag == "__BACK__":
-                    print("Returning to previous step")
+                    self.say("Returning to previous step")
                     return self.run(args)
                 args.ac_lag = ac_lag
                 step += 1
@@ -2039,7 +2022,7 @@ class InteractiveConfigWizard:
                 default_cc_lag = args.cc_lag if hasattr(args, "cc_lag") else 10
                 cc_lag = self.prompt_int(f"Step {step}: CC lag", default_cc_lag, 1, allow_back=True)
                 if cc_lag == "__BACK__":
-                    print("Returning to previous step")
+                    self.say("Returning to previous step")
                     return self.run(args)
                 args.cc_lag = cc_lag
                 step += 1
@@ -2050,7 +2033,7 @@ class InteractiveConfigWizard:
                     f"Step {step}: ACC lag", default_acc_lag, 1, allow_back=True
                 )
                 if acc_lag == "__BACK__":
-                    print("Returning to previous step")
+                    self.say("Returning to previous step")
                     return self.run(args)
                 args.acc_lag = acc_lag
                 step += 1
@@ -2068,7 +2051,7 @@ class InteractiveConfigWizard:
                     max_value=COVARIANCE_MAX_RAW_LENGTH,
                 )
                 if raw_length == "__BACK__":
-                    print("Returning to previous step")
+                    self.say("Returning to previous step")
                     return self.run(args)
                 args.covariance_max_raw_length = raw_length
                 step += 1
@@ -2079,7 +2062,7 @@ class InteractiveConfigWizard:
                     f"Step {step}: PDT lag", default_pdt_lag, 1, allow_back=True
                 )
                 if pdt_lag == "__BACK__":
-                    print("Returning to previous step")
+                    self.say("Returning to previous step")
                     return self.run(args)
                 args.pdt_lag = pdt_lag
                 step += 1
@@ -2095,7 +2078,7 @@ class InteractiveConfigWizard:
                     max_value=PDT_MAX_RAW_LENGTH,
                 )
                 if pdt_max_raw_length == "__BACK__":
-                    print("Returning to previous step")
+                    self.say("Returning to previous step")
                     return self.run(args)
                 args.pdt_max_raw_length = pdt_max_raw_length
                 step += 1
@@ -2113,7 +2096,7 @@ class InteractiveConfigWizard:
                     f"Step {step}: PSSM index path", default_pssm_index, allow_back=True
                 )
                 if candidate == "__BACK__":
-                    print("Returning to previous step")
+                    self.say("Returning to previous step")
                     return self.run(args)
                 args.pssm_index_path = candidate or default_pssm_index
                 if os.path.isabs(args.pssm_index_path):
@@ -2122,8 +2105,8 @@ class InteractiveConfigWizard:
                     project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
                     abs_candidate = os.path.join(project_root, args.pssm_index_path)
                 if not os.path.exists(abs_candidate):
-                    print(f"PSSM index not found: {abs_candidate}")
-                    print(
+                    self.say(f"PSSM index not found: {abs_candidate}")
+                    self.say(
                         f"Build cache first, e.g.: python tools/build_pssm_cache.py --data_dir {task_root}/data --split train --out_dir {task_root}/pssm_cache/all"
                     )
                 args.profile_on_missing = (
@@ -2141,7 +2124,7 @@ class InteractiveConfigWizard:
                     f"Step {step}: PSSM index path", default_pssm_index, allow_back=True
                 )
                 if candidate == "__BACK__":
-                    print("Returning to previous step")
+                    self.say("Returning to previous step")
                     return self.run(args)
                 args.pssm_index_path = candidate or default_pssm_index
                 if os.path.isabs(args.pssm_index_path):
@@ -2150,8 +2133,8 @@ class InteractiveConfigWizard:
                     project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
                     abs_candidate = os.path.join(project_root, args.pssm_index_path)
                 if not os.path.exists(abs_candidate):
-                    print(f"PSSM index not found: {abs_candidate}")
-                    print(
+                    self.say(f"PSSM index not found: {abs_candidate}")
+                    self.say(
                         f"Build cache first, e.g.: python tools/build_pssm_cache.py --data_dir {task_root}/data --split train --out_dir {task_root}/pssm_cache/all"
                     )
                 step += 1
@@ -2160,7 +2143,7 @@ class InteractiveConfigWizard:
                     f"Step {step}: AC-PSSM lag", default_ac_pssm_lag, 1, allow_back=True
                 )
                 if ac_pssm_lag == "__BACK__":
-                    print("Returning to previous step")
+                    self.say("Returning to previous step")
                     return self.run(args)
                 args.ac_pssm_lag = ac_pssm_lag
                 step += 1
@@ -2175,7 +2158,7 @@ class InteractiveConfigWizard:
                     f"Step {step}: PSSM index path", default_pssm_index, allow_back=True
                 )
                 if candidate == "__BACK__":
-                    print("Returning to previous step")
+                    self.say("Returning to previous step")
                     return self.run(args)
                 args.pssm_index_path = candidate or default_pssm_index
                 if os.path.isabs(args.pssm_index_path):
@@ -2184,8 +2167,8 @@ class InteractiveConfigWizard:
                     project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
                     abs_candidate = os.path.join(project_root, args.pssm_index_path)
                 if not os.path.exists(abs_candidate):
-                    print(f"PSSM index not found: {abs_candidate}")
-                    print(
+                    self.say(f"PSSM index not found: {abs_candidate}")
+                    self.say(
                         f"Build cache first, e.g.: python tools/build_pssm_cache.py --data_dir {task_root}/data --split train --out_dir {task_root}/pssm_cache/all"
                     )
                 step += 1
@@ -2194,7 +2177,7 @@ class InteractiveConfigWizard:
                     f"Step {step}: CC-PSSM lag", default_cc_pssm_lag, 1, allow_back=True
                 )
                 if cc_pssm_lag == "__BACK__":
-                    print("Returning to previous step")
+                    self.say("Returning to previous step")
                     return self.run(args)
                 args.cc_pssm_lag = cc_pssm_lag
                 step += 1
@@ -2209,7 +2192,7 @@ class InteractiveConfigWizard:
                     f"Step {step}: PSSM index path", default_pssm_index, allow_back=True
                 )
                 if candidate == "__BACK__":
-                    print("Returning to previous step")
+                    self.say("Returning to previous step")
                     return self.run(args)
                 args.pssm_index_path = candidate or default_pssm_index
                 if os.path.isabs(args.pssm_index_path):
@@ -2218,8 +2201,8 @@ class InteractiveConfigWizard:
                     project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
                     abs_candidate = os.path.join(project_root, args.pssm_index_path)
                 if not os.path.exists(abs_candidate):
-                    print(f"PSSM index not found: {abs_candidate}")
-                    print(
+                    self.say(f"PSSM index not found: {abs_candidate}")
+                    self.say(
                         f"Build cache first, e.g.: python tools/build_pssm_cache.py --data_dir {task_root}/data --split train --out_dir {task_root}/pssm_cache/all"
                     )
                 step += 1
@@ -2228,7 +2211,7 @@ class InteractiveConfigWizard:
                     f"Step {step}: ACC-PSSM lag", default_acc_pssm_lag, 1, allow_back=True
                 )
                 if acc_pssm_lag == "__BACK__":
-                    print("Returning to previous step")
+                    self.say("Returning to previous step")
                     return self.run(args)
                 args.acc_pssm_lag = acc_pssm_lag
                 step += 1
@@ -2245,7 +2228,7 @@ class InteractiveConfigWizard:
                     allow_back=True,
                 )
                 if candidate == "__BACK__":
-                    print("Returning to previous step")
+                    self.say("Returning to previous step")
                     return self.run(args)
                 setattr(args, index_key, candidate or default_index)
                 args.profile_on_missing = "blosum62_hybrid"
@@ -2258,7 +2241,7 @@ class InteractiveConfigWizard:
                     allow_back=True,
                 )
                 if lag == "__BACK__":
-                    print("Returning to previous step")
+                    self.say("Returning to previous step")
                     return self.run(args)
                 setattr(args, lag_key, lag)
                 step += 1
@@ -2273,7 +2256,7 @@ class InteractiveConfigWizard:
                     f"Step {step}: PSFM index path", default_psfm_index, allow_back=True
                 )
                 if candidate == "__BACK__":
-                    print("Returning to previous step")
+                    self.say("Returning to previous step")
                     return self.run(args)
                 args.psfm_index_path = candidate or default_psfm_index
                 args.profile_on_missing = (
@@ -2285,7 +2268,7 @@ class InteractiveConfigWizard:
                     project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
                     abs_candidate = os.path.join(project_root, args.psfm_index_path)
                 if not os.path.exists(abs_candidate):
-                    print(f"PSFM index not found: {abs_candidate}")
+                    self.say(f"PSFM index not found: {abs_candidate}")
                 step += 1
 
             if args.encoder == "word2vec":
@@ -2298,7 +2281,7 @@ class InteractiveConfigWizard:
                     f"Step {step}: Word2Vec embedding path", default_word2vec, allow_back=True
                 )
                 if candidate == "__BACK__":
-                    print("Returning to previous step")
+                    self.say("Returning to previous step")
                     return self.run(args)
                 args.word2vec_path = candidate or default_word2vec
                 if os.path.isabs(args.word2vec_path):
@@ -2307,8 +2290,8 @@ class InteractiveConfigWizard:
                     project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
                     abs_candidate = os.path.join(project_root, args.word2vec_path)
                 if not os.path.exists(abs_candidate):
-                    print(f"Word2Vec embedding not found: {abs_candidate}")
-                    print("Will auto-build Word2Vec embedding cache before training.")
+                    self.say(f"Word2Vec embedding not found: {abs_candidate}")
+                    self.say("Will auto-build Word2Vec embedding cache before training.")
                 step += 1
 
             if args.encoder == "glove":
@@ -2321,7 +2304,7 @@ class InteractiveConfigWizard:
                     allow_back=True,
                 )
                 if candidate == "__BACK__":
-                    print("Returning to previous step")
+                    self.say("Returning to previous step")
                     return self.run(args)
                 args.glove_path = candidate
                 if args.glove_path:
@@ -2331,9 +2314,9 @@ class InteractiveConfigWizard:
                         project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
                         abs_candidate = os.path.join(project_root, args.glove_path)
                     if not os.path.exists(abs_candidate):
-                        print(f"GloVe embedding not found: {abs_candidate}")
+                        self.say(f"GloVe embedding not found: {abs_candidate}")
                 else:
-                    print("Will auto-build the GloVe embedding cache from the training split.")
+                    self.say("Will auto-build the GloVe embedding cache from the training split.")
                 step += 1
 
             if args.encoder == "fasttext":
@@ -2346,7 +2329,7 @@ class InteractiveConfigWizard:
                     f"Step {step}: FastText embedding path", default_fasttext, allow_back=True
                 )
                 if candidate == "__BACK__":
-                    print("Returning to previous step")
+                    self.say("Returning to previous step")
                     return self.run(args)
                 args.fasttext_path = candidate or default_fasttext
                 if os.path.isabs(args.fasttext_path):
@@ -2355,8 +2338,8 @@ class InteractiveConfigWizard:
                     project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
                     abs_candidate = os.path.join(project_root, args.fasttext_path)
                 if not os.path.exists(abs_candidate):
-                    print(f"FastText embedding not found: {abs_candidate}")
-                    print("Will auto-build FastText embedding cache before training.")
+                    self.say(f"FastText embedding not found: {abs_candidate}")
+                    self.say("Will auto-build FastText embedding cache before training.")
                 step += 1
 
             args.max_length = self.prompt_int(f"Step {step}: max length", args.max_length, 1)
@@ -2367,19 +2350,19 @@ class InteractiveConfigWizard:
                     f"Step {step}: batch_size", args.batch_size, 1, allow_back=True
                 )
                 if batch_size == "__BACK__":
-                    print("Returning to previous step")
+                    self.say("Returning to previous step")
                     return self.run(args)
                 args.batch_size = batch_size
                 step += 1
                 lr = self.prompt_float(f"Step {step}: learning rate", args.lr, 0.0, allow_back=True)
                 if lr == "__BACK__":
-                    print("Returning to previous step")
+                    self.say("Returning to previous step")
                     return self.run(args)
                 args.lr = lr
                 step += 1
                 epochs = self.prompt_int(f"Step {step}: epochs", args.epochs, 1, allow_back=True)
                 if epochs == "__BACK__":
-                    print("Returning to previous step")
+                    self.say("Returning to previous step")
                     return self.run(args)
                 args.epochs = epochs
                 step += 1
@@ -2391,7 +2374,7 @@ class InteractiveConfigWizard:
                         allow_back=True,
                     )
                     if dl_scaler == "__BACK__":
-                        print("Returning to previous step")
+                        self.say("Returning to previous step")
                         return self.run(args)
                     args.dl_scaler = dl_scaler
                     step += 1
@@ -2400,7 +2383,7 @@ class InteractiveConfigWizard:
 
             step, semantic_back = self._prompt_semantic_auxiliary(args, step, allow_back=True)
             if semantic_back == "__BACK__":
-                print("Returning to previous step")
+                self.say("Returning to previous step")
                 return self.run(args)
 
             if self._regularization_relevant(args):
@@ -2412,7 +2395,7 @@ class InteractiveConfigWizard:
                     allow_back=True,
                 )
                 if enable_reg == "__BACK__":
-                    print("Returning to previous step")
+                    self.say("Returning to previous step")
                     return self.run(args)
                 args.enable_regularization = enable_reg == "yes"
                 step += 1
@@ -2425,7 +2408,7 @@ class InteractiveConfigWizard:
                         f"Step {step}: dropout", args.dropout, 0.0, allow_back=True
                     )
                     if dropout == "__BACK__":
-                        print("Returning to previous step")
+                        self.say("Returning to previous step")
                         return self.run(args)
                     args.dropout = dropout
                     step += 1
@@ -2433,7 +2416,7 @@ class InteractiveConfigWizard:
                         f"Step {step}: weight decay", args.weight_decay, 0.0, allow_back=True
                     )
                     if weight_decay == "__BACK__":
-                        print("Returning to previous step")
+                        self.say("Returning to previous step")
                         return self.run(args)
                     args.weight_decay = weight_decay
                     step += 1
@@ -2444,7 +2427,7 @@ class InteractiveConfigWizard:
                         allow_back=True,
                     )
                     if grad_clip_norm == "__BACK__":
-                        print("Returning to previous step")
+                        self.say("Returning to previous step")
                         return self.run(args)
                     args.grad_clip_norm = grad_clip_norm
                     step += 1
@@ -2455,7 +2438,7 @@ class InteractiveConfigWizard:
                         allow_back=True,
                     )
                     if early_stop_patience == "__BACK__":
-                        print("Returning to previous step")
+                        self.say("Returning to previous step")
                         return self.run(args)
                     args.early_stop_patience = early_stop_patience
                     step += 1
@@ -2466,7 +2449,7 @@ class InteractiveConfigWizard:
                         allow_back=True,
                     )
                     if early_stop_min_delta == "__BACK__":
-                        print("Returning to previous step")
+                        self.say("Returning to previous step")
                         return self.run(args)
                     args.early_stop_min_delta = early_stop_min_delta
                     step += 1
@@ -2479,7 +2462,7 @@ class InteractiveConfigWizard:
 
             step, head_back = self._prompt_prediction_head(args, step, allow_back=True)
             if head_back == "__BACK__":
-                print("Returning to previous step")
+                self.say("Returning to previous step")
                 return self.run(args)
 
             downstream_classifier = effective_classifier(args)
@@ -2491,7 +2474,7 @@ class InteractiveConfigWizard:
                     allow_back=True,
                 )
                 if svm_calibration == "__BACK__":
-                    print("Returning to previous step")
+                    self.say("Returning to previous step")
                     return self.run(args)
                 args.svm_calibration = svm_calibration
                 args.svm_calibration_cv_folds = 3
@@ -2504,7 +2487,7 @@ class InteractiveConfigWizard:
                         allow_back=True,
                     )
                     if svm_class_weight == "__BACK__":
-                        print("Returning to previous step")
+                        self.say("Returning to previous step")
                         return self.run(args)
                     args.svm_class_weight = svm_class_weight
                     step += 1
@@ -2520,7 +2503,7 @@ class InteractiveConfigWizard:
                         allow_back=True,
                     )
                     if logreg_class_weight == "__BACK__":
-                        print("Returning to previous step")
+                        self.say("Returning to previous step")
                         return self.run(args)
                     args.logreg_class_weight = logreg_class_weight
                     step += 1
@@ -2574,7 +2557,7 @@ class InteractiveConfigWizard:
                     )
                     if args.histgb_max_leaf_nodes == 0 or args.histgb_max_leaf_nodes >= 2:
                         break
-                    print("HistGB max leaf nodes must be 0 (unlimited) or at least 2.")
+                    self.say("HistGB max leaf nodes must be 0 (unlimited) or at least 2.")
                 step += 1
                 args.histgb_lr = self.prompt_float(
                     f"Step {step}: HistGB learning rate", args.histgb_lr, 1e-12
@@ -2606,7 +2589,7 @@ class InteractiveConfigWizard:
                         f"Step {step}: XGBoost subsample", args.xgb_subsample, 0.0, allow_back=True
                     )
                     if xgb_subsample == "__BACK__":
-                        print("Returning to previous step")
+                        self.say("Returning to previous step")
                         return self.run(args)
                     args.xgb_subsample = xgb_subsample
                     step += 1
@@ -2617,7 +2600,7 @@ class InteractiveConfigWizard:
                         allow_back=True,
                     )
                     if xgb_colsample == "__BACK__":
-                        print("Returning to previous step")
+                        self.say("Returning to previous step")
                         return self.run(args)
                     args.xgb_colsample = xgb_colsample
                     step += 1
@@ -2628,7 +2611,7 @@ class InteractiveConfigWizard:
                         allow_back=True,
                     )
                     if xgb_reg_alpha == "__BACK__":
-                        print("Returning to previous step")
+                        self.say("Returning to previous step")
                         return self.run(args)
                     args.xgb_reg_alpha = xgb_reg_alpha
                     step += 1
@@ -2639,7 +2622,7 @@ class InteractiveConfigWizard:
                         allow_back=True,
                     )
                     if xgb_reg_lambda == "__BACK__":
-                        print("Returning to previous step")
+                        self.say("Returning to previous step")
                         return self.run(args)
                     args.xgb_reg_lambda = xgb_reg_lambda
                     step += 1
@@ -2667,7 +2650,7 @@ class InteractiveConfigWizard:
                         f"Step {step}: LightGBM subsample", args.lgb_subsample, 0.0, allow_back=True
                     )
                     if lgb_subsample == "__BACK__":
-                        print("Returning to previous step")
+                        self.say("Returning to previous step")
                         return self.run(args)
                     args.lgb_subsample = lgb_subsample
                     step += 1
@@ -2678,7 +2661,7 @@ class InteractiveConfigWizard:
                         allow_back=True,
                     )
                     if lgb_colsample == "__BACK__":
-                        print("Returning to previous step")
+                        self.say("Returning to previous step")
                         return self.run(args)
                     args.lgb_colsample = lgb_colsample
                     step += 1
@@ -2689,7 +2672,7 @@ class InteractiveConfigWizard:
                         allow_back=True,
                     )
                     if lgb_reg_alpha == "__BACK__":
-                        print("Returning to previous step")
+                        self.say("Returning to previous step")
                         return self.run(args)
                     args.lgb_reg_alpha = lgb_reg_alpha
                     step += 1
@@ -2700,7 +2683,7 @@ class InteractiveConfigWizard:
                         allow_back=True,
                     )
                     if lgb_reg_lambda == "__BACK__":
-                        print("Returning to previous step")
+                        self.say("Returning to previous step")
                         return self.run(args)
                     args.lgb_reg_lambda = lgb_reg_lambda
                     step += 1
@@ -2715,208 +2698,208 @@ class InteractiveConfigWizard:
             f"Step {step}: Data directory", default_data_dir, allow_back=True
         )
         if data_dir == "__BACK__":
-            print("Returning to previous step")
+            self.say("Returning to previous step")
             return self.run(args)
         args.data_dir = data_dir
-        print("Configuration complete")
-        print(f"tokenizer={args.tokenizer}")
+        self.say("Configuration complete")
+        self.say(f"tokenizer={args.tokenizer}")
         if args.tokenizer == "unigram":
-            print(f"unigram_path={args.unigram_path}")
+            self.say(f"unigram_path={args.unigram_path}")
         if args.tokenizer == "wordpiece":
-            print(f"wordpiece_path={args.wordpiece_path}")
+            self.say(f"wordpiece_path={args.wordpiece_path}")
         if args.tokenizer == "protbert":
-            print(f"protbert_feature_dir={args.protbert_feature_dir}")
-            print(f"protbert_model={args.protbert_model}")
+            self.say(f"protbert_feature_dir={args.protbert_feature_dir}")
+            self.say(f"protbert_model={args.protbert_model}")
         if args.tokenizer == "prott5":
-            print(f"prott5_feature_dir={args.prott5_feature_dir}")
-            print(f"prott5_model={args.prott5_model}")
+            self.say(f"prott5_feature_dir={args.prott5_feature_dir}")
+            self.say(f"prott5_model={args.prott5_model}")
         if args.tokenizer == "esmc":
-            print(f"esmc_feature_dir={args.esmc_feature_dir}")
-            print(f"esmc_model={args.esmc_model}")
+            self.say(f"esmc_feature_dir={args.esmc_feature_dir}")
+            self.say(f"esmc_model={args.esmc_model}")
         if args.tokenizer == "esm3":
-            print(f"esm3_feature_dir={args.esm3_feature_dir}")
-            print(f"esm3_model={args.esm3_model}")
+            self.say(f"esm3_feature_dir={args.esm3_feature_dir}")
+            self.say(f"esm3_model={args.esm3_model}")
 
         if args.encoder == "word2vec":
-            print(f"word2vec_path={args.word2vec_path}")
+            self.say(f"word2vec_path={args.word2vec_path}")
         if args.encoder == "glove":
-            print(f"glove_path={args.glove_path}")
+            self.say(f"glove_path={args.glove_path}")
         if args.encoder == "fasttext":
-            print(f"fasttext_path={args.fasttext_path}")
+            self.say(f"fasttext_path={args.fasttext_path}")
         if args.encoder in {"pssm", "pssm_blosum62_hybrid"}:
-            print(f"pssm_index_path={args.pssm_index_path}")
+            self.say(f"pssm_index_path={args.pssm_index_path}")
         if args.encoder == "ac_pssm":
-            print(f"pssm_index_path={args.pssm_index_path}")
+            self.say(f"pssm_index_path={args.pssm_index_path}")
         if args.encoder == "cc_pssm":
-            print(f"pssm_index_path={args.pssm_index_path}")
+            self.say(f"pssm_index_path={args.pssm_index_path}")
         if args.encoder == "acc_pssm":
-            print(f"pssm_index_path={args.pssm_index_path}")
+            self.say(f"pssm_index_path={args.pssm_index_path}")
         if args.encoder in HYBRID_PSSM_COVARIANCE_ENCODERS:
             index_key = f"{args.encoder}_index_path"
-            print(f"{index_key}={getattr(args, index_key)}")
+            self.say(f"{index_key}={getattr(args, index_key)}")
         if args.encoder in {"psfm", "psfm_blosum62_hybrid"}:
-            print(f"psfm_index_path={args.psfm_index_path}")
+            self.say(f"psfm_index_path={args.psfm_index_path}")
         if args.tokenizer in {"top-n-gram", "dt"}:
-            print(f"frequency_profile_index_path={args.frequency_profile_index_path}")
+            self.say(f"frequency_profile_index_path={args.frequency_profile_index_path}")
         if args.encoder == "tfidf":
-            print("encoder=TF-IDF")
+            self.say("encoder=TF-IDF")
         else:
-            print(f"encoder={args.encoder}")
+            self.say(f"encoder={args.encoder}")
         if args.encoder == "ac":
-            print(f"ac_lag={args.ac_lag}")
+            self.say(f"ac_lag={args.ac_lag}")
         if args.encoder == "cc":
-            print(f"cc_lag={args.cc_lag}")
+            self.say(f"cc_lag={args.cc_lag}")
         if args.encoder == "acc":
-            print(f"acc_lag={args.acc_lag}")
+            self.say(f"acc_lag={args.acc_lag}")
         if args.encoder in COVARIANCE_ENCODERS:
-            print(
+            self.say(
                 "covariance_max_raw_length="
                 f"{getattr(args, 'covariance_max_raw_length', COVARIANCE_DEFAULT_MAX_RAW_LENGTH)}"
             )
         if args.encoder == "pdt":
-            print(f"pdt_lag={args.pdt_lag}")
-            print(
+            self.say(f"pdt_lag={args.pdt_lag}")
+            self.say(
                 "pdt_max_raw_length="
                 f"{getattr(args, 'pdt_max_raw_length', PDT_DEFAULT_MAX_RAW_LENGTH)}"
             )
         if args.encoder == "ac_pssm":
-            print(f"ac_pssm_lag={args.ac_pssm_lag}")
+            self.say(f"ac_pssm_lag={args.ac_pssm_lag}")
         if args.encoder == "cc_pssm":
-            print(f"cc_pssm_lag={args.cc_pssm_lag}")
+            self.say(f"cc_pssm_lag={args.cc_pssm_lag}")
         if args.encoder == "acc_pssm":
-            print(f"acc_pssm_lag={args.acc_pssm_lag}")
+            self.say(f"acc_pssm_lag={args.acc_pssm_lag}")
         if args.encoder in HYBRID_PSSM_COVARIANCE_ENCODERS:
             lag_key = pssm_covariance_lag_key(args.encoder)
-            print(f"{lag_key}={getattr(args, lag_key)}")
-        print(f"model={args.model}")
+            self.say(f"{lag_key}={getattr(args, lag_key)}")
+        self.say(f"model={args.model}")
         if normalize_task_type(getattr(args, "task_type", "")) == "pep_hlaii":
-            print(f"pair_strategy={public_pair_strategy(getattr(args, 'pair_strategy', ''))}")
+            self.say(f"pair_strategy={public_pair_strategy(getattr(args, 'pair_strategy', ''))}")
             if getattr(args, "interaction_level", ""):
-                print(f"interaction_level={args.interaction_level}")
+                self.say(f"interaction_level={args.interaction_level}")
             if getattr(args, "interaction_model", ""):
-                print(f"interaction_model={args.interaction_model}")
-            print(f"predictor_type={getattr(args, 'predictor_type', 'classifier')}")
+                self.say(f"interaction_model={args.interaction_model}")
+            self.say(f"predictor_type={getattr(args, 'predictor_type', 'classifier')}")
             if getattr(args, "graph_predictor", ""):
-                print(f"graph_predictor={args.graph_predictor}")
+                self.say(f"graph_predictor={args.graph_predictor}")
         if getattr(args, "sequence_model", ""):
-            print(f"sequence_model={args.sequence_model}")
-            print(f"training_mode={args.training_mode}")
-            print(f"classifier={args.classifier}")
+            self.say(f"sequence_model={args.sequence_model}")
+            self.say(f"training_mode={args.training_mode}")
+            self.say(f"classifier={args.classifier}")
         if getattr(args, "head_hidden_dims", None) is not None:
-            print(f"head_hidden_dims={json.dumps(args.head_hidden_dims)}")
+            self.say(f"head_hidden_dims={json.dumps(args.head_hidden_dims)}")
             if args.head_hidden_dims:
-                print(f"head_activation={args.head_activation}")
-                print(f"head_dropout={args.head_dropout}")
+                self.say(f"head_activation={args.head_activation}")
+                self.say(f"head_dropout={args.head_dropout}")
         if args.reduction != "none":
-            print(f"reduction={args.reduction}")
+            self.say(f"reduction={args.reduction}")
             if args.reduction == "lsa":
-                print(f"lsa_dim={args.lsa_dim}")
-                print(f"lsa_dense_memory_limit_gib={args.lsa_dense_memory_limit_gib}")
+                self.say(f"lsa_dim={args.lsa_dim}")
+                self.say(f"lsa_dense_memory_limit_gib={args.lsa_dense_memory_limit_gib}")
             if args.reduction == "lda":
-                print(f"lda_topics={args.lda_topics}")
-                print(f"lda_dense_memory_limit_gib={args.lda_dense_memory_limit_gib}")
+                self.say(f"lda_topics={args.lda_topics}")
+                self.say(f"lda_dense_memory_limit_gib={args.lda_dense_memory_limit_gib}")
             if args.reduction == "plsa":
-                print(f"plsa_topics={args.plsa_topics}")
-        print(f"k={args.k}")
+                self.say(f"plsa_topics={args.plsa_topics}")
+        self.say(f"k={args.k}")
         if args.tokenizer == "dr":
-            print(f"dr_max_distance={args.dr_max_distance}")
-            print(
+            self.say(f"dr_max_distance={args.dr_max_distance}")
+            self.say(
                 f"dr_max_raw_length={getattr(args, 'dr_max_raw_length', DR_DEFAULT_MAX_RAW_LENGTH)}"
             )
         if args.tokenizer == "top-n-gram":
-            print(f"top_ngram_n={args.top_ngram_n}")
+            self.say(f"top_ngram_n={args.top_ngram_n}")
         if args.tokenizer == "dt":
-            print("top_ngram_n=1 (fixed by DT v1)")
-            print(f"dt_max_distance={args.dt_max_distance}")
+            self.say("top_ngram_n=1 (fixed by DT v1)")
+            self.say(f"dt_max_distance={args.dt_max_distance}")
         if args.tokenizer in {
             "kmer",
             "dr",
             "top-n-gram",
             "dt",
         } and str(getattr(args, "encoder", "")).strip().lower() in {"bow", "tfidf", "tf-idf"}:
-            print(
+            self.say(
                 "frequency_max_raw_length="
                 f"{getattr(args, 'frequency_max_raw_length', FREQUENCY_DEFAULT_MAX_RAW_LENGTH)}"
             )
 
-        print(f"max_length={args.max_length}")
+        self.say(f"max_length={args.max_length}")
         if self._is_trainable_dl_route(args):
-            print(f"batch_size={args.batch_size}")
-            print(f"lr={args.lr}")
-            print(f"epochs={args.epochs}")
-            print(f"dl_scaler={args.dl_scaler}")
-            print(f"enable_semantic_similarity={self._semantic_auxiliary_enabled(args)}")
+            self.say(f"batch_size={args.batch_size}")
+            self.say(f"lr={args.lr}")
+            self.say(f"epochs={args.epochs}")
+            self.say(f"dl_scaler={args.dl_scaler}")
+            self.say(f"enable_semantic_similarity={self._semantic_auxiliary_enabled(args)}")
             if self._semantic_auxiliary_enabled(args):
-                print("semantic_similarity_type=auxiliary_loss")
-            print(f"enable_regularization={args.enable_regularization}")
+                self.say("semantic_similarity_type=auxiliary_loss")
+            self.say(f"enable_regularization={args.enable_regularization}")
             if args.enable_regularization:
-                print(f"dropout={args.dropout}")
-                print(f"weight_decay={args.weight_decay}")
-                print(f"grad_clip_norm={args.grad_clip_norm}")
-                print(f"early_stop_patience={args.early_stop_patience}")
-                print(f"early_stop_min_delta={args.early_stop_min_delta}")
-        print(f"data_dir={args.data_dir}")
+                self.say(f"dropout={args.dropout}")
+                self.say(f"weight_decay={args.weight_decay}")
+                self.say(f"grad_clip_norm={args.grad_clip_norm}")
+                self.say(f"early_stop_patience={args.early_stop_patience}")
+                self.say(f"early_stop_min_delta={args.early_stop_min_delta}")
+        self.say(f"data_dir={args.data_dir}")
         downstream_classifier = effective_classifier(args)
         if downstream_classifier in CLASSICAL_CLASSIFIERS:
-            print(f"ml_scaler={args.ml_scaler}")
-            print(f"ml_reduction={args.ml_reduction}")
+            self.say(f"ml_scaler={args.ml_scaler}")
+            self.say(f"ml_reduction={args.ml_reduction}")
             if args.ml_reduction != "none":
-                print(f"ml_reduction_dim={args.ml_reduction_dim}")
+                self.say(f"ml_reduction_dim={args.ml_reduction_dim}")
             if args.ml_reduction == "tsvd":
-                print(
+                self.say(
                     "tsvd_dense_memory_limit_gib="
                     f"{getattr(args, 'tsvd_dense_memory_limit_gib', 4.0)}"
                 )
             if args.ml_reduction == "pca":
-                print(
+                self.say(
                     f"pca_dense_memory_limit_gib={getattr(args, 'pca_dense_memory_limit_gib', 4.0)}"
                 )
             if args.ml_reduction == "kpca":
-                print(f"kpca_kernel={args.kpca_kernel}")
-                print(f"kpca_memory_limit_gib={getattr(args, 'kpca_memory_limit_gib', 4.0)}")
+                self.say(f"kpca_kernel={args.kpca_kernel}")
+                self.say(f"kpca_memory_limit_gib={getattr(args, 'kpca_memory_limit_gib', 4.0)}")
                 if args.kpca_kernel in {"rbf", "poly"}:
-                    print(f"kpca_gamma={args.kpca_gamma}")
+                    self.say(f"kpca_gamma={args.kpca_gamma}")
         if downstream_classifier == "rf":
-            print(f"rf_estimators={args.rf_estimators}")
-            print(f"rf_max_depth={args.rf_max_depth}")
-            print(f"rf_min_samples_leaf={args.rf_min_samples_leaf}")
-            print(f"enable_regularization={args.enable_regularization}")
+            self.say(f"rf_estimators={args.rf_estimators}")
+            self.say(f"rf_max_depth={args.rf_max_depth}")
+            self.say(f"rf_min_samples_leaf={args.rf_min_samples_leaf}")
+            self.say(f"enable_regularization={args.enable_regularization}")
         if downstream_classifier == "svm":
-            print(f"svm_calibration={getattr(args, 'svm_calibration', 'none')}")
-            print(f"svm_calibration_cv_folds={getattr(args, 'svm_calibration_cv_folds', 3)}")
-            print(f"enable_regularization={args.enable_regularization}")
+            self.say(f"svm_calibration={getattr(args, 'svm_calibration', 'none')}")
+            self.say(f"svm_calibration_cv_folds={getattr(args, 'svm_calibration_cv_folds', 3)}")
+            self.say(f"enable_regularization={args.enable_regularization}")
             if args.enable_regularization:
-                print(f"svm_class_weight={args.svm_class_weight}")
+                self.say(f"svm_class_weight={args.svm_class_weight}")
         if downstream_classifier == "extratrees":
-            print(f"et_estimators={args.et_estimators}")
-            print(f"et_max_depth={args.et_max_depth}")
-            print(f"et_min_samples_leaf={args.et_min_samples_leaf}")
+            self.say(f"et_estimators={args.et_estimators}")
+            self.say(f"et_max_depth={args.et_max_depth}")
+            self.say(f"et_min_samples_leaf={args.et_min_samples_leaf}")
         if downstream_classifier == "histgb":
-            print(f"histgb_max_iter={args.histgb_max_iter}")
-            print(f"histgb_max_leaf_nodes={args.histgb_max_leaf_nodes}")
-            print(f"histgb_lr={args.histgb_lr}")
-            print(f"enable_regularization={args.enable_regularization}")
+            self.say(f"histgb_max_iter={args.histgb_max_iter}")
+            self.say(f"histgb_max_leaf_nodes={args.histgb_max_leaf_nodes}")
+            self.say(f"histgb_lr={args.histgb_lr}")
+            self.say(f"enable_regularization={args.enable_regularization}")
             if args.enable_regularization:
-                print(f"histgb_l2_regularization={args.histgb_l2_regularization}")
+                self.say(f"histgb_l2_regularization={args.histgb_l2_regularization}")
         if downstream_classifier == "xgb":
-            print(f"xgb_estimators={args.xgb_estimators}")
-            print(f"xgb_max_depth={args.xgb_max_depth}")
-            print(f"xgb_lr={args.xgb_lr}")
-            print(f"enable_regularization={args.enable_regularization}")
+            self.say(f"xgb_estimators={args.xgb_estimators}")
+            self.say(f"xgb_max_depth={args.xgb_max_depth}")
+            self.say(f"xgb_lr={args.xgb_lr}")
+            self.say(f"enable_regularization={args.enable_regularization}")
             if args.enable_regularization:
-                print(f"xgb_subsample={args.xgb_subsample}")
-                print(f"xgb_colsample={args.xgb_colsample}")
-                print(f"xgb_reg_alpha={args.xgb_reg_alpha}")
-                print(f"xgb_reg_lambda={args.xgb_reg_lambda}")
+                self.say(f"xgb_subsample={args.xgb_subsample}")
+                self.say(f"xgb_colsample={args.xgb_colsample}")
+                self.say(f"xgb_reg_alpha={args.xgb_reg_alpha}")
+                self.say(f"xgb_reg_lambda={args.xgb_reg_lambda}")
         if downstream_classifier == "logreg":
-            print(f"logreg_c={args.logreg_c}")
-            print(f"logreg_max_iter={args.logreg_max_iter}")
-            print(
+            self.say(f"logreg_c={args.logreg_c}")
+            self.say(f"logreg_max_iter={args.logreg_max_iter}")
+            self.say(
                 f"logreg_convergence_policy={getattr(args, 'logreg_convergence_policy', 'strict')}"
             )
-            print(f"enable_regularization={args.enable_regularization}")
+            self.say(f"enable_regularization={args.enable_regularization}")
             if args.enable_regularization:
-                print(f"logreg_class_weight={args.logreg_class_weight}")
+                self.say(f"logreg_class_weight={args.logreg_class_weight}")
         return args
 
 

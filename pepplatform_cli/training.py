@@ -1,84 +1,77 @@
 """An opt-in provenance envelope around the unchanged training entrypoints."""
 from __future__ import annotations
 
-import argparse
-import json
 import platform
 import shutil
 import subprocess
 import sys
 from pathlib import Path
 
+from pepplatform.cli_training import namespace_argv, trainer_for
 from pepplatform.task_compat import normalize_task_type
+
 from . import data
-from .storage import (CLIError, ROOT, file_digest, finish_run, guard_output, inventory,
-                      new_run, read_json, write_json)
+from .storage import (
+    ROOT,
+    CLIError,
+    file_digest,
+    finish_run,
+    guard_output,
+    inventory,
+    new_run,
+    read_json,
+    write_json,
+)
 
 
 def parser_for(task):
-    if normalize_task_type(task) == "pep_function":
-        from scripts.train_sequence_pipeline import build_argument_parser, InteractiveConfigWizard
-        return build_argument_parser(), InteractiveConfigWizard, ROOT / "scripts/train_sequence_pipeline.py"
-    from scripts.train_pair_pipeline import build_argument_parser, PPIInteractiveWizard
-    return build_argument_parser(), PPIInteractiveWizard, ROOT / "scripts/train_pair_pipeline.py"
+    return trainer_for(task)
 
 
-def namespace_argv(parser, namespace):
-    """Serialize through argparse's declared actions; never invent trainer flags."""
-    result, seen = [], set()
-    for action in parser._actions:
-        dest = action.dest
-        if (dest in seen or dest in {"help", "interactive", "advanced_wizard", "list_objectives"}
-                or not action.option_strings or not hasattr(namespace, dest)):
-            continue
-        seen.add(dest)
-        value = getattr(namespace, dest)
-        if value is None:
-            continue
-        if value == action.default:
-            continue
-        flag = next((x for x in action.option_strings if x.startswith("--")), action.option_strings[0])
-        if isinstance(action, argparse.BooleanOptionalAction):
-            result.append(flag if value else next(x for x in action.option_strings if x.startswith("--no-")))
-        elif isinstance(action, argparse._StoreTrueAction):
-            if value:
-                result.append(flag)
-        elif isinstance(action, argparse._StoreFalseAction):
-            if not value:
-                result.append(flag)
-        elif isinstance(value, (list, tuple)) and action.nargs in {"*", "+"}:
-            result.extend([flag, *map(str, value)])
-        else:
-            text = json.dumps(value) if isinstance(value, (dict, list, tuple)) else str(value)
-            result.extend([flag, text])
-    return result
-
-
-def train(arguments, *, task="pep_function", interactive=False, advanced=False,
-          workspace=None, artifact_dir=None, run_process=subprocess.run):
-    from .storage import DEFAULT_WORKSPACE
-    parser, wizard, script = parser_for(task)
-    args = parser.parse_args(["--task_type", task, *arguments])
-    if normalize_task_type(args.task_type) != normalize_task_type(task):
-        raise CLIError("task_mismatch", "Use the outer --task-type to select the training task")
-    args.advanced_wizard = advanced or args.advanced_wizard
-    if interactive or args.interactive or not arguments:
-        args = wizard().run(args)
-        # The shared wizard may switch task; reparse with that task's actual parser.
-        chosen = normalize_task_type(args.task_type)
-        if chosen != normalize_task_type(task):
-            old_parser = parser
-            parser, _, script = parser_for(chosen)
-            args = parser.parse_args(namespace_argv(old_parser, args))
-    task = normalize_task_type(args.task_type)
+def training_preflight(args):
     source = Path(args.data_dir).expanduser()
     source = source.resolve() if source.is_absolute() else (ROOT / source).resolve()
     if not args.data_dir or not (source / "train").is_dir() or not (source / "val").is_dir():
         raise CLIError("training_data_required", "Provenance training requires --data_dir with train/ and val/ splits")
     explicit_root = getattr(args, "task_root", "")
-    original_data = data.dataset({"task_type": task, "data_dir": str(source),
+    original_data = data.dataset({"task_type": normalize_task_type(args.task_type), "data_dir": str(source),
                                  "source_root": str((ROOT / explicit_root).resolve()) if explicit_root else str(source.parent)})
-    before = data.validation_identity(original_data)
+    identity = data.validation_identity(original_data)
+    for name in ("train_csv", "val_csv", "test_csv"):
+        value = getattr(args, name, "")
+        if not value:
+            continue
+        path = Path(value).expanduser()
+        path = path.resolve() if path.is_absolute() else (ROOT / path).resolve()
+        if not path.is_relative_to(source):
+            raise CLIError("training_split_external", "Explicit split files must lie within --data_dir")
+        if name != "test_csv" and path != source / name.removesuffix("_csv") / "pairs.csv":
+            raise CLIError("training_split_mismatch", "Training provenance requires standard train/val pairs.csv inputs")
+    if getattr(args, "artifact_dir", ""):
+        guard_output(args.artifact_dir, [source])
+    return source, original_data, identity
+
+
+def train(arguments, *, task="pep_function", interactive=False, advanced=False,
+          workspace=None, artifact_dir=None, run_process=subprocess.run, language=None, ui=None):
+    from pepplatform.cli_training import configure_training, explicit_task, without_language
+
+    from .storage import DEFAULT_WORKSPACE
+    task = task or explicit_task(arguments)
+    parser, _, script = parser_for(task or "pep_function")
+    args = parser.parse_args(["--task_type", task or "pep_function", *arguments])
+    language = vars(args).pop("lang", language)
+    if normalize_task_type(args.task_type) != normalize_task_type(task or "pep_function"):
+        raise CLIError("task_mismatch", "Use the outer --task-type to select the training task")
+    args.advanced_wizard = advanced or args.advanced_wizard
+    if interactive or args.interactive or not without_language(arguments):
+        args, parser, script = configure_training(
+            arguments, task=task, language=language, ui=ui, wrapped=True,
+            advanced=advanced, workspace=workspace or DEFAULT_WORKSPACE,
+            artifact_dir=artifact_dir, validate=training_preflight,
+        )
+    task = normalize_task_type(args.task_type)
+    source, original_data, before = training_preflight(args)
     selected_output = artifact_dir or getattr(args, "artifact_dir", "") or None
     run = new_run(workspace or DEFAULT_WORKSPACE, "train", inputs=[source], artifact_dir=selected_output)
     directory = Path(run["directory"])

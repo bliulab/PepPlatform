@@ -96,6 +96,24 @@ python -m pepplatform_cli
 python -m pepplatform_cli --help
 ```
 
+Interactive sessions first select Chinese or English and keep that language for
+navigation, training, ensembles, inference, history, and configuration review.
+Use `python -m pepplatform_cli --lang en` (or `--lang zh`) to skip the language
+question. Historical `scripts/train_pipeline.py`, `train_sequence_pipeline.py`,
+and `train_pair_pipeline.py` interactive entrypoints support the same option.
+Task selection happens once; an explicit task option skips that question.
+
+During configuration, `b` returns to the previous input and `q` cancels the
+current workflow; at the main menu they exit. Accepted inputs remain available
+as defaults when revisiting a field; `-` clears an optional text field.
+Before execution, review the resolved
+inputs, seed, loss, semantic settings, selection protocol and replay command,
+then choose **Run**, **Modify** (the default), or **Cancel**. No run is created
+until **Run** is selected. Existing noninteractive commands do not gain prompts.
+Scientific identifiers and parameter names retain their original spelling;
+training logs and machine-readable JSON remain unchanged. Language and navigation
+state are excluded from training metadata and replay arguments.
+
 
 ## Data and models
 
